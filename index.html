@@ -1,0 +1,1498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Trip Guide">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1A6B3C">
+<link id="pwa-manifest" rel="manifest">
+<link id="apple-touch-icon-link" rel="apple-touch-icon">
+<title>Trip Guide</title>
+<style>
+:root{--sat:env(safe-area-inset-top);--sab:env(safe-area-inset-bottom);
+  --g:#00C853;--gd:#F5C518;--b:#7EC8E3;--nat:#5CBA47;--rd:#FF4444;--or:#FF6B35;
+  --bg:#07100A;--card:#0C1C0E;--border:#19291B;--sub:#4E6E52;--tx:#DCF0DE;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  max-width:430px;margin:0 auto;min-height:100dvh;
+  background-image:radial-gradient(ellipse at 20% 0%,#0A2A0F 0%,transparent 50%),
+                   radial-gradient(ellipse at 80% 100%,#1A1200 0%,transparent 50%);}
+::-webkit-scrollbar{width:0;}
+input,textarea,select{-webkit-appearance:none;font-family:inherit;}
+input:focus,textarea:focus,select:focus{outline:none;}
+.btn{cursor:pointer;transition:transform .12s,opacity .12s;-webkit-user-select:none;user-select:none;}
+.btn:active{transform:scale(.96);opacity:.8;}
+.fade{animation:fu .22s ease both;}
+@keyframes fu{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.blink{animation:bk 1.8s infinite;}
+@keyframes bk{0%,100%{opacity:1}50%{opacity:.35}}
+.spin{animation:sp 1s linear infinite;}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ── SCREENS ── */
+.screen{display:none;min-height:100dvh;padding-bottom:calc(20px + var(--sab));}
+.screen.active{display:block;}
+
+/* ── HOME SCREEN ── */
+.home-header{padding:calc(18px + var(--sat)) 18px 14px;
+  background:linear-gradient(180deg,var(--bg) 70%,transparent);
+  position:sticky;top:0;z-index:50;}
+.app-logo{font-size:22px;font-weight:900;color:var(--g);letter-spacing:2px;}
+.app-sub{font-size:10px;color:var(--sub);margin-top:2px;}
+.header-row{display:flex;justify-content:space-between;align-items:flex-start;}
+.icon-btn{background:#0A140B;border:1px solid var(--border);border-radius:12px;
+  padding:8px 10px;font-size:16px;cursor:pointer;color:var(--sub);}
+.trips-grid{padding:0 14px;display:flex;flex-direction:column;gap:10px;margin-top:4px;}
+.trip-card{background:linear-gradient(135deg,#0A2210,var(--bg));
+  border:1px solid var(--border);border-radius:18px;padding:16px;cursor:pointer;
+  display:flex;align-items:center;gap:14px;position:relative;}
+.trip-card:active{transform:scale(.98);}
+.trip-flag{font-size:40px;flex-shrink:0;}
+.trip-city{font-size:20px;font-weight:900;line-height:1;}
+.trip-dates{font-size:10px;color:var(--sub);margin-top:4px;}
+.trip-hotel{font-size:11px;color:var(--gd);margin-top:2px;}
+.trip-del{position:absolute;top:12px;right:12px;background:#120707;
+  border:1px solid #2A1010;border-radius:8px;padding:4px 8px;
+  font-size:11px;color:#FF7070;cursor:pointer;}
+.new-trip-btn{margin:16px 14px 0;background:linear-gradient(135deg,var(--g),#009E3A);
+  color:#000;border:none;border-radius:16px;padding:16px;font-size:15px;
+  font-weight:800;width:calc(100% - 28px);cursor:pointer;display:flex;
+  align-items:center;justify-content:center;gap:8px;}
+.empty-state{text-align:center;padding:60px 30px;color:var(--sub);}
+.empty-icon{font-size:60px;margin-bottom:16px;}
+.empty-title{font-size:18px;font-weight:800;color:var(--tx);margin-bottom:8px;}
+.empty-sub{font-size:13px;line-height:1.6;}
+
+/* ── CREATE SCREEN ── */
+.screen-hdr{position:sticky;top:0;z-index:50;
+  padding:calc(14px + var(--sat)) 16px 12px;
+  background:linear-gradient(180deg,var(--bg) 80%,transparent);
+  display:flex;align-items:center;gap:12px;}
+.back-btn{background:#0A140B;border:1px solid var(--border);border-radius:10px;
+  padding:7px 12px;font-size:12px;color:var(--sub);cursor:pointer;font-weight:700;}
+.screen-title{font-size:16px;font-weight:900;color:var(--tx);}
+.form-body{padding:0 14px 100px;}
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:10px;font-weight:800;color:var(--sub);
+  text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;}
+.field input,.field textarea,.field select{width:100%;background:#050C07;
+  border:1px solid var(--border);border-radius:11px;
+  padding:12px 13px;color:var(--tx);font-size:14px;}
+.field textarea{height:80px;resize:none;line-height:1.5;}
+.field select option{background:#050C07;}
+.field-row{display:flex;gap:10px;}
+.field-row .field{flex:1;}
+.interests{display:flex;flex-wrap:wrap;gap:8px;}
+.int-chip{display:flex;align-items:center;gap:6px;background:#050C07;
+  border:1px solid var(--border);border-radius:20px;padding:8px 12px;
+  font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;}
+.int-chip.on{background:#0A1B0A;border-color:var(--g);color:var(--g);}
+.int-chip input{display:none;}
+.form-actions{position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:430px;padding:12px 14px calc(12px + var(--sab));
+  background:linear-gradient(0deg,var(--bg) 60%,transparent);
+  display:flex;flex-direction:column;gap:8px;}
+.btn-ai{background:linear-gradient(135deg,var(--g),#009E3A);color:#000;
+  border:none;border-radius:14px;padding:15px;font-size:15px;font-weight:800;cursor:pointer;}
+.btn-manual{background:#0A140B;color:var(--sub);border:1px solid var(--border);
+  border-radius:14px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;}
+.hint-box{background:#041008;border:1px solid #163010;border-radius:10px;
+  padding:10px 12px;margin-bottom:12px;font-size:11px;color:var(--sub);line-height:1.5;}
+
+/* ── LOADING SCREEN ── */
+.loading-wrap{display:flex;flex-direction:column;align-items:center;
+  justify-content:center;min-height:100dvh;padding:40px;text-align:center;}
+.loading-city{font-size:32px;font-weight:900;color:var(--tx);margin-bottom:6px;}
+.loading-sub{font-size:13px;color:var(--sub);margin-bottom:40px;line-height:1.6;}
+.loading-spinner{font-size:40px;margin-bottom:20px;}
+.loading-step{font-size:12px;color:var(--g);margin-top:16px;}
+.progress-dots{display:flex;gap:8px;justify-content:center;margin-top:20px;}
+.dot-pulse{width:8px;height:8px;border-radius:50%;background:var(--g);
+  animation:dp 1.4s ease-in-out infinite;}
+.dot-pulse:nth-child(2){animation-delay:.2s;}
+.dot-pulse:nth-child(3){animation-delay:.4s;}
+@keyframes dp{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}
+
+/* ── TRIP VIEW SCREEN ── */
+.trip-header{position:sticky;top:0;z-index:50;
+  padding:calc(10px + var(--sat)) 16px 0;
+  background:linear-gradient(180deg,var(--bg) 72%,transparent);}
+.trip-header-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.trip-city-name{font-size:20px;font-weight:900;color:var(--g);letter-spacing:1.5px;line-height:1;}
+.trip-time{font-size:10px;color:var(--sub);margin-top:2px;}
+.day-selector{display:flex;gap:3px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;}
+.day-selector::-webkit-scrollbar{display:none;}
+.day-btn2{background:#0A140B;color:var(--sub);border:1px solid var(--border);
+  border-radius:12px;padding:6px 12px;font-size:10px;font-weight:800;
+  cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.day-btn2.active{background:var(--g);color:#000;border-color:var(--g);}
+.tabs2{display:flex;gap:3px;margin-top:10px;margin-bottom:2px;}
+.tab-btn2{flex:1;background:#0A140B;color:var(--sub);border:1px solid var(--border);
+  border-radius:9px;padding:7px 1px;font-size:10px;font-weight:800;cursor:pointer;}
+.tab-btn2.active{background:var(--g);color:#000;border-color:var(--g);}
+.trip-content{padding:0 14px;}
+
+/* ── STOP CARDS ── */
+.mc{background:linear-gradient(145deg,#0A2210,var(--bg));border:1.5px solid var(--border);
+  border-radius:20px;padding:17px 15px;margin-top:11px;}
+.mc.live{border-color:var(--g);box-shadow:0 0 28px rgba(0,200,83,.10);}
+.mc.sel{border-color:var(--gd);}
+.mc.htype{background:linear-gradient(145deg,#071020,var(--bg));}
+.mc.htype.live{border-color:var(--b);box-shadow:0 0 24px rgba(126,200,227,.12);}
+.mc.dtype{background:linear-gradient(145deg,#1A0A00,var(--bg));}
+.mc.dtype.live{border-color:var(--gd);box-shadow:0 0 24px rgba(245,197,24,.12);}
+.mc.ntype{background:linear-gradient(145deg,#041A05,var(--bg));}
+.mc.ntype.live{border-color:var(--nat);box-shadow:0 0 24px rgba(92,186,71,.12);}
+.br2{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;flex-wrap:wrap;gap:5px;}
+.bl2{display:flex;gap:5px;flex-wrap:wrap;}
+.badge{border-radius:20px;padding:2px 9px;font-size:10px;font-weight:800;}
+.bg{background:var(--g);color:#000;}.bb{background:var(--b);color:#000;}
+.bgd{background:var(--gd);color:#000;}.bn{background:var(--nat);color:#000;}
+.bsel{background:var(--gd);color:#000;}
+.blg{background:#091409;color:var(--g);border:1px solid var(--border);font-size:9px;}
+.blb{background:#070F18;color:var(--b);border:1px solid #1A2A3A;font-size:9px;}
+.blgd{background:#120A00;color:var(--gd);border:1px solid #2A1A00;font-size:9px;}
+.bln{background:#041008;color:var(--nat);border:1px solid #163010;font-size:9px;}
+.bnalc{background:#1A0800;color:#FF9800;border:1px solid #2A1200;font-size:9px;font-weight:700;}
+/* Risk badges */
+.risk-low{background:#041008;color:#5CBA47;border:1px solid #163010;font-size:9px;font-weight:700;border-radius:20px;padding:2px 8px;}
+.risk-med{background:#1A1000;color:#F5C518;border:1px solid #2A1800;font-size:9px;font-weight:700;border-radius:20px;padding:2px 8px;}
+.risk-high{background:#1A0404;color:#FF6B6B;border:1px solid #2A0808;font-size:9px;font-weight:700;border-radius:20px;padding:2px 8px;}
+.risk-note{font-size:10px;line-height:1.4;margin-top:4px;padding:5px 10px 6px;border-radius:8px;}
+.risk-note.low{background:#041008;color:#5CBA47;border:1px solid #163010;}
+.risk-note.med{background:#1A1000;color:#F5C518;border:1px solid #2A1800;}
+.risk-note.high{background:#1A0404;color:#FF6B6B;border:1px solid #2A0808;}
+/* GPS location */
+.gps-bar{background:#050C07;border:1px solid var(--border);border-radius:12px;padding:8px 12px;margin-top:10px;display:flex;align-items:center;gap:10px;}
+.gps-dot{width:8px;height:8px;border-radius:50%;background:var(--sub);flex-shrink:0;}
+.gps-dot.active{background:var(--g);box-shadow:0 0 6px var(--g);animation:bk 1.5s infinite;}
+.gps-txt{font-size:11px;color:var(--sub);flex:1;line-height:1.3;}
+.gps-btn{background:#0A1B0A;color:var(--g);border:1px solid var(--g);border-radius:9px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;}
+/* Resequence banner */
+.reseq-banner{background:#041008;border:1px solid #163010;border-radius:12px;padding:10px 13px;margin-top:10px;display:flex;align-items:center;gap:10px;}
+.reseq-txt{font-size:11px;color:var(--nat);flex:1;line-height:1.4;}
+.reseq-btn{background:var(--nat);color:#000;border:none;border-radius:9px;padding:6px 12px;font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0;}
+.tleft{color:var(--sub);font-size:10px;}
+.tr2{font-size:10px;color:var(--sub);letter-spacing:.8px;text-transform:uppercase;margin-bottom:3px;}
+.hero2{display:flex;gap:11px;align-items:flex-start;margin-bottom:13px;}
+.hem{font-size:34px;line-height:1;}
+.hn{font-size:22px;font-weight:900;line-height:1.1;letter-spacing:-.5px;}
+.hcat{font-size:11px;color:var(--gd);margin-top:3px;}
+.hcat.blue{color:var(--b);}.hcat.nat{color:var(--nat);}
+.dbox{background:#050C07;border-radius:11px;padding:11px 12px;margin-bottom:11px;}
+.drow{display:flex;gap:8px;margin-bottom:6px;align-items:flex-start;}
+.drow:last-child{margin-bottom:0;}
+.dic{font-size:13px;flex-shrink:0;}.dtx{font-size:11px;color:var(--sub);line-height:1.4;}
+.tbox{background:#081300;border:1px solid #162800;border-radius:9px;
+  padding:7px 11px;margin-bottom:11px;display:flex;gap:8px;}
+.tbox.b{background:#070F18;border-color:#0E1F30;}
+.tbox.gd{background:#120A00;border-color:#1E1200;}
+.tbox.nat{background:#041008;border-color:#163010;}
+.ttx{font-size:11px;color:#8BC34A;line-height:1.4;}
+.ttx.b{color:var(--b);}.ttx.gd{color:var(--gd);}.ttx.nat{color:var(--nat);}
+.nalcbox{background:#1A0800;border:1px solid #2A1200;border-radius:9px;
+  padding:7px 11px;margin-bottom:11px;display:flex;gap:8px;}
+.nalctx{font-size:11px;color:#FF9800;line-height:1.4;}
+.arow{display:flex;gap:8px;}
+.abtn{flex:1;border-radius:11px;padding:10px 8px;font-weight:800;font-size:12px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;border:none;}
+.a-g{background:#0A1B0A;color:var(--g);border:1px solid var(--g);}
+.a-b{background:#070F18;color:var(--b);border:1px solid var(--b);}
+.a-nat{background:#041008;color:var(--nat);border:1px solid var(--nat);}
+.a-call{background:#181200;color:var(--gd);border:1px solid var(--gd);}
+.a-dis{background:#090E09;color:var(--sub);border:1px solid var(--border);}
+.a-uber{background:#0A0010;color:#B48AFF;border:1px solid #6A3ADF;}
+.nc2{background:var(--card);border:1px solid var(--border);border-radius:15px;
+  padding:12px 14px;margin-top:9px;cursor:pointer;}
+.nclbl{font-size:9px;color:var(--sub);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;}
+.ncb{display:flex;align-items:center;justify-content:space-between;}
+.ncin{display:flex;gap:9px;align-items:center;}
+.ncnm{font-weight:800;font-size:14px;}.ncsb{font-size:10px;color:var(--sub);}
+.ps{margin-top:13px;}
+.plbl{font-size:9px;color:var(--sub);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;}
+.pbar{display:flex;gap:2px;}
+.seg{flex:1;height:7px;border-radius:5px;background:var(--border);cursor:pointer;}
+.seg.done{background:#163016;}
+.seg.cg{background:var(--g);box-shadow:0 0 7px var(--g);}
+.seg.cb{background:var(--b);box-shadow:0 0 7px var(--b);}
+.seg.cgd{background:var(--gd);box-shadow:0 0 7px var(--gd);}
+.seg.cn{background:var(--nat);box-shadow:0 0 7px var(--nat);}
+.pe{display:flex;justify-content:space-between;margin-top:4px;}
+
+/* ── SCHEDULE LIST ── */
+.sitem{display:flex;gap:9px;margin-bottom:7px;cursor:pointer;}
+.sitem.done{opacity:.45;}
+.tlcol{display:flex;flex-direction:column;align-items:center;width:17px;flex-shrink:0;padding-top:14px;}
+.dot{width:12px;height:12px;border-radius:50%;background:var(--border);border:2px solid var(--border);flex-shrink:0;}
+.dot.lg{background:var(--g);border-color:var(--g);box-shadow:0 0 6px var(--g);}
+.dot.lb{background:var(--b);border-color:var(--b);box-shadow:0 0 6px var(--b);}
+.dot.lgd{background:var(--gd);border-color:var(--gd);box-shadow:0 0 6px var(--gd);}
+.dot.ln{background:var(--nat);border-color:var(--nat);box-shadow:0 0 6px var(--nat);}
+.dot.dn{background:#163016;border-color:#163016;}.dot.hd{background:#1A2A3A;border-color:var(--b);}
+.tll{flex:1;width:2px;background:var(--border);margin-top:3px;min-height:14px;}
+.scard{flex:1;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 12px;}
+.scard.cg{background:#0A2010;border-color:var(--g);}
+.scard.cb{background:#070F18;border-color:var(--b);}
+.scard.cgd{background:#120A00;border-color:var(--gd);}
+.scard.cn{background:#041008;border-color:var(--nat);}
+.scard.hc2{background:#070F18;border-color:#1A2A3A;}
+.sh{display:flex;justify-content:space-between;align-items:flex-start;}
+.sl{display:flex;gap:7px;align-items:center;}
+.snm{font-weight:800;font-size:13px;}.stm{font-size:10px;color:var(--sub);}
+.sco{font-size:10px;color:var(--sub);margin-top:5px;}
+.scv{font-size:9px;color:var(--gd);margin-top:2px;}.sna{font-size:9px;color:#FF9800;margin-top:2px;}
+.nowsm{border-radius:20px;padding:2px 8px;font-size:9px;font-weight:800;}
+
+/* ── HOTEL BANNER ── */
+.hbanner{background:linear-gradient(135deg,#0A1A2A,#071020);border:1px solid #1A2A3A;
+  border-radius:14px;padding:10px 13px;margin:10px 0 0;display:flex;align-items:center;
+  gap:10px;cursor:pointer;}
+.hname{font-size:12px;font-weight:800;color:var(--b);}
+.hsub{font-size:10px;color:#3A5A6A;margin-top:1px;}
+.hact{font-size:10px;color:var(--b);margin-left:auto;text-align:right;flex-shrink:0;font-weight:700;}
+
+/* ── TIPS ── */
+.tgrid{display:flex;flex-direction:column;gap:10px;margin-top:12px;}
+.tc{background:var(--card);border:1px solid var(--border);border-radius:15px;padding:14px;}
+.tc.dang{background:#120707;border-color:#281010;}
+.tc.blu{background:#070F18;border-color:#1A2A3A;}
+.tc.nat{background:#041008;border-color:#163010;}
+.tc.crew{background:#0A0A1A;border-color:#1A1A3A;}
+.tctit{font-weight:800;font-size:13px;margin-bottom:10px;}
+.tctit.gd{color:var(--gd);}.tctit.or{color:var(--or);}
+.tctit.rd{color:var(--rd);}.tctit.bl{color:var(--b);}.tctit.nat{color:var(--nat);}
+.tctit.crew{color:#A080FF;}
+.row{display:flex;gap:9px;margin-bottom:8px;align-items:flex-start;}
+.row:last-child{margin-bottom:0;}
+.ic{font-size:14px;flex-shrink:0;}.tx{font-size:11px;color:var(--sub);line-height:1.5;}
+.er{display:flex;justify-content:space-between;padding:8px 0;
+  border-bottom:1px solid #1E0A0A;text-decoration:none;}
+.en2{color:#FF7070;font-weight:800;font-size:13px;}.el{color:var(--sub);font-size:11px;}
+.mi{margin-bottom:9px;}.mi:last-child{margin-bottom:0;}
+.mn{font-weight:700;font-size:11px;color:var(--g);}.md{font-size:10px;color:var(--sub);margin-top:2px;line-height:1.5;}
+.conv{display:flex;gap:8px;align-items:center;}
+.ciw{flex:1;position:relative;}
+.cpfx{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--sub);font-size:11px;pointer-events:none;}
+.cinp{width:100%;background:#050C07;border:1px solid var(--border);border-radius:9px;
+  padding:10px 10px 10px 30px;color:var(--tx);font-size:15px;font-family:inherit;}
+.cres{flex:1;background:#050C07;border:1px solid var(--border);border-radius:9px;
+  padding:10px;font-size:15px;color:var(--sub);}
+.cres.v{color:var(--g);font-weight:800;}
+.cnote{font-size:10px;color:var(--sub);margin-top:5px;}
+
+/* ── PHRASES ── */
+.psec2{margin-bottom:16px;}
+.psec-title{font-size:10px;font-weight:800;color:var(--nat);text-transform:uppercase;
+  letter-spacing:1.2px;margin-bottom:8px;padding-left:2px;}
+.pcard{background:#050C07;border:1px solid var(--border);border-radius:12px;
+  margin-bottom:5px;overflow:hidden;cursor:pointer;}
+.pcard:active{background:#060F08;}
+.pin{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;}
+.ppt{font-size:16px;font-weight:800;color:var(--tx);line-height:1.2;}
+.pen{font-size:12px;color:#A8C8AA;margin-top:3px;font-weight:500;}
+.ppr{font-size:11px;color:var(--gd);font-style:italic;margin-top:3px;}
+.ptip{font-size:9px;color:#2A4A2E;padding:0 12px 8px;line-height:1.4;}
+
+/* ── SETTINGS ── */
+.settings-body{padding:0 14px 80px;}
+.setting-section{margin-bottom:20px;}
+.setting-label{font-size:10px;font-weight:800;color:var(--sub);
+  text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;display:block;}
+.setting-input{width:100%;background:#050C07;border:1px solid var(--border);
+  border-radius:11px;padding:12px 13px;color:var(--tx);font-size:13px;}
+.setting-note{font-size:10px;color:var(--sub);margin-top:6px;line-height:1.5;}
+.setting-save{width:100%;background:linear-gradient(135deg,var(--g),#009E3A);
+  color:#000;border:none;border-radius:13px;padding:14px;font-size:14px;
+  font-weight:800;cursor:pointer;margin-top:10px;}
+.api-status{font-size:11px;padding:8px 12px;border-radius:9px;margin-top:8px;line-height:1.4;}
+.api-status.ok{background:#041008;border:1px solid #163010;color:var(--nat);}
+.api-status.none{background:#120707;border:1px solid #281010;color:#FF7070;}
+
+/* ── HOTEL SELECTION OVERLAY ── */
+#hotel-ol{position:fixed;inset:0;z-index:960;background:rgba(2,8,3,.92);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  display:flex;flex-direction:column;justify-content:flex-end;}
+#hotel-ol.hidden{display:none;}
+.hotel-ol-box{background:#0D1C0F;border:1.5px solid var(--g);border-radius:22px 22px 0 0;
+  padding:22px 18px calc(22px + var(--sab));max-height:78vh;overflow-y:auto;}
+.hotel-ol-hdr{font-size:16px;font-weight:800;color:var(--tx);margin-bottom:6px;}
+.hotel-ol-sub{font-size:11px;color:var(--sub);margin-bottom:16px;line-height:1.5;}
+.hotel-option{background:#050C07;border:1px solid var(--border);border-radius:13px;
+  padding:13px 14px;margin-bottom:9px;cursor:pointer;}
+.hotel-option:active{border-color:var(--g);background:#0A1B0A;}
+.hotel-opt-name{font-size:14px;font-weight:800;color:var(--tx);}
+.hotel-opt-addr{font-size:11px;color:var(--sub);margin-top:3px;line-height:1.4;}
+.hotel-opt-phone{font-size:11px;color:var(--b);margin-top:2px;}
+.hotel-ol-cancel{width:100%;background:#0A140B;color:var(--sub);border:1px solid var(--border);
+  border-radius:13px;padding:13px;font-size:13px;font-weight:700;cursor:pointer;margin-top:4px;}
+.hotel-status{background:#050C07;border:1px solid var(--border);border-radius:10px;
+  padding:9px 12px;margin-top:6px;font-size:11px;color:var(--sub);display:flex;align-items:center;gap:8px;}
+.hotel-status.found{border-color:var(--nat);color:var(--nat);background:#041008;}
+.hotel-status.err{border-color:#2A1010;color:#FF7070;background:#120707;}
+/* ── INSTALL OVERLAY ── */
+#ios-ol{position:fixed;inset:0;z-index:950;background:rgba(2,8,3,.88);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  display:flex;flex-direction:column;justify-content:flex-end;}
+#ios-ol.hidden{display:none;}
+.ios-box{background:#0D1C0F;border:1.5px solid var(--g);border-radius:22px 22px 0 0;
+  padding:22px 20px calc(22px + var(--sab));}
+.ios-hdr{font-size:17px;font-weight:800;color:var(--tx);margin-bottom:18px;
+  display:flex;align-items:center;justify-content:space-between;}
+.ios-step{display:flex;gap:12px;margin-bottom:14px;align-items:flex-start;}
+.ios-n{width:26px;height:26px;border-radius:50%;background:var(--g);color:#000;
+  font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.ios-tx{font-size:13px;color:var(--sub);line-height:1.55;}
+.ios-tx strong{color:var(--tx);}
+.ios-tx .pill{display:inline-block;background:#1A2E1C;color:var(--g);
+  border-radius:6px;padding:1px 7px;font-size:11px;font-weight:700;margin:0 2px;}
+.ios-close{width:100%;background:#0A140B;color:var(--sub);border:1px solid #1A291C;
+  border-radius:13px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;margin-top:8px;}
+.itab-btn{flex:1;background:#0A140B;color:var(--sub);border:1px solid #1A291C;
+  border-radius:10px;padding:9px 8px;font-size:12px;font-weight:700;cursor:pointer;}
+.itab-btn.active{background:var(--g);color:#000;border-color:var(--g);}
+
+/* ── SPEAK BUTTON ── */
+.speak-wrap{position:fixed;bottom:calc(20px + var(--sab));left:50%;
+  transform:translateX(-50%);display:flex;flex-direction:column;
+  align-items:center;gap:6px;z-index:100;}
+.sind{background:#060E08;border:1px solid var(--g);border-radius:20px;
+  padding:4px 14px;font-size:10px;color:var(--g);white-space:nowrap;}
+.sbtn{width:62px;height:62px;border-radius:50%;border:none;
+  background:linear-gradient(135deg,var(--g),#009E3A);color:#000;font-size:26px;
+  cursor:pointer;box-shadow:0 4px 22px rgba(0,200,83,.27),0 2px 8px #000;
+  display:flex;align-items:center;justify-content:center;transition:background .25s,box-shadow .25s;}
+.sbtn.stop{background:linear-gradient(135deg,#BB2200,#FF3300);
+  box-shadow:0 4px 22px rgba(255,51,0,.33),0 2px 8px #000;}
+.slbl{font-size:9px;color:var(--sub);letter-spacing:1px;text-transform:uppercase;}
+</style>
+</head>
+<body>
+
+<!-- ── HOTEL SELECTION OVERLAY ── -->
+<div id="hotel-ol" class="hidden">
+  <div class="hotel-ol-box">
+    <div class="hotel-ol-hdr">🏨 Select Your Hotel</div>
+    <div class="hotel-ol-sub" id="hotel-ol-sub">Multiple hotels found. Tap the correct one.</div>
+    <div id="hotel-options"></div>
+    <button class="hotel-ol-cancel btn" onclick="closeHotelOl()">Cancel</button>
+  </div>
+</div>
+
+<!-- ── INSTALL OVERLAY ── -->
+<div id="ios-ol" class="hidden">
+  <div class="ios-box">
+    <div class="ios-hdr">
+      📲 Add to Home Screen
+      <button class="ios-close btn" onclick="closeIOS()" style="width:auto;padding:6px 14px;margin:0;font-size:12px;">✕</button>
+    </div>
+    <div id="tab-iphone">
+      <div style="display:flex;gap:6px;margin-bottom:14px;">
+        <button class="itab-btn active btn" onclick="switchTab('iphone')">🍎 iPhone</button>
+        <button class="itab-btn btn" onclick="switchTab('android')">🤖 Android</button>
+      </div>
+      <div class="ios-step"><div class="ios-n">1</div><div class="ios-tx">Open in <strong>Safari</strong> (not Chrome)</div></div>
+      <div class="ios-step"><div class="ios-n">2</div><div class="ios-tx">Tap <strong>Share</strong> <span class="pill">⬆</span> at the bottom</div></div>
+      <div class="ios-step"><div class="ios-n">3</div><div class="ios-tx">Tap <strong>"Add to Home Screen"</strong> <span class="pill">＋</span></div></div>
+      <div class="ios-step" style="margin-bottom:0;"><div class="ios-n">4</div><div class="ios-tx">Tap <strong>"Add"</strong> — full screen app, no browser bar ✓</div></div>
+    </div>
+    <div id="tab-android" style="display:none;">
+      <div style="display:flex;gap:6px;margin-bottom:14px;">
+        <button class="itab-btn btn" onclick="switchTab('iphone')">🍎 iPhone</button>
+        <button class="itab-btn active btn" onclick="switchTab('android')">🤖 Android</button>
+      </div>
+      <div class="ios-step"><div class="ios-n">1</div><div class="ios-tx">Tap the <strong>⋮ menu</strong> in Chrome (top right corner)</div></div>
+      <div class="ios-step" style="margin-bottom:0;"><div class="ios-n">2</div><div class="ios-tx">Tap <strong>"Add to Home Screen"</strong> → <strong>"Add"</strong> — full screen app, no browser bar ✓</div></div>
+    </div>
+    <button class="ios-close btn" onclick="closeIOS()" style="margin-top:12px;">Got it</button>
+  </div>
+</div>
+
+<!-- ══ SCREEN 1: HOME ══ -->
+<div id="s-home" class="screen active">
+  <div class="home-header">
+    <div class="header-row">
+      <div>
+        <div class="app-logo">✈ TRIP GUIDE</div>
+        <div class="app-sub">Your AI travel companion</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="icon-btn btn" onclick="showInstall()" title="Install app">📲</button>
+        <button class="icon-btn btn" onclick="show('s-settings')">⚙️</button>
+      </div>
+    </div>
+  </div>
+  <div id="trips-grid" class="trips-grid"></div>
+  <div style="padding:0 14px;">
+    <button class="new-trip-btn btn" onclick="show('s-create')">✈ Plan New Trip</button>
+  </div>
+</div>
+
+<!-- ══ SCREEN 2: CREATE TRIP ══ -->
+<div id="s-create" class="screen">
+  <div class="screen-hdr">
+    <button class="back-btn btn" onclick="show('s-home')">← Back</button>
+    <div class="screen-title">New Trip</div>
+  </div>
+  <div class="form-body">
+    <div class="hint-box" id="api-hint"></div>
+    <div class="field-row">
+      <div class="field"><label>City</label><input id="f-city" placeholder="e.g. Tokyo"></div>
+      <div class="field"><label>Country</label><input id="f-country" placeholder="e.g. Japan"></div>
+    </div>
+    <div class="field"><label>Hotel Name</label><input id="f-hotel" placeholder="e.g. Park Hyatt Tokyo"></div>
+    <div id="hotel-lookup-result"></div>
+    <div class="field-row">
+      <div class="field"><label>Arrival Date</label><input id="f-adate" type="date"></div>
+      <div class="field"><label>Arrival Time</label><input id="f-atime" type="time"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Departure Date</label><input id="f-ddate" type="date"></div>
+      <div class="field"><label>🚗 Pickup Time</label><input id="f-dtime" type="time"><div style="font-size:10px;color:var(--sub);margin-top:4px;">Time Uber/taxi picks you up for the airport</div></div>
+    </div>
+    <div class="field">
+      <label>Interests</label>
+      <div class="interests" id="interests-grid"></div>
+    </div>
+    <div class="field">
+      <label>Notes for AI</label>
+      <textarea id="f-notes" placeholder="e.g. No alcohol on departure day (flight crew regulations). Prefer hidden local spots over tourist traps. Love hiking and street food."></textarea>
+    </div>
+  </div>
+  <div class="form-actions">
+    <button class="btn-ai btn" onclick="generateTrip()">✨ Generate with AI</button>
+    <button class="btn-manual btn" onclick="createManual()">Create Blank — Add Stops Manually</button>
+  </div>
+</div>
+
+<!-- ══ SCREEN 3: LOADING ══ -->
+<div id="s-loading" class="screen">
+  <div class="loading-wrap">
+    <div class="loading-spinner spin">✈</div>
+    <div class="loading-city" id="l-city">Tokyo</div>
+    <div class="loading-sub" id="l-sub">Generating your itinerary,<br>local phrases &amp; crew info...</div>
+    <div class="progress-dots">
+      <div class="dot-pulse"></div><div class="dot-pulse"></div><div class="dot-pulse"></div>
+    </div>
+    <div class="loading-step" id="l-step">Researching local culture...</div>
+  </div>
+</div>
+
+<!-- ══ SCREEN 4: TRIP VIEW ══ -->
+<div id="s-trip" class="screen">
+  <div class="trip-header">
+    <div class="trip-header-row">
+      <div>
+        <div class="trip-city-name" id="t-city">TOKYO</div>
+        <div class="trip-time" id="t-time">Loading...</div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button class="icon-btn btn" id="t-install-btn" onclick="showInstall()">📲</button>
+        <button class="icon-btn btn" onclick="show('s-home')">✕</button>
+      </div>
+    </div>
+    <div class="day-selector" id="day-selector"></div>
+    <div class="tabs2">
+      <button class="tab-btn2 active btn" id="tab2-now"      onclick="setTab2('now')">🎯 NOW</button>
+      <button class="tab-btn2 btn"        id="tab2-list"     onclick="setTab2('list')">📋 LIST</button>
+      <button class="tab-btn2 btn"        id="tab2-phrases"  onclick="setTab2('phrases')">🗣 PHRASES</button>
+      <button class="tab-btn2 btn"        id="tab2-tips"     onclick="setTab2('tips')">🧠 TIPS</button>
+    </div>
+  </div>
+  <div class="trip-content">
+    <div id="pane-now"     class="fade"></div>
+    <div id="pane-list"    style="display:none;margin-top:12px;"></div>
+    <div id="pane-phrases" style="display:none;margin-top:12px;"></div>
+    <div id="pane-tips"    style="display:none;"></div>
+  </div>
+</div>
+
+<!-- ══ SCREEN 5: SETTINGS ══ -->
+<div id="s-settings" class="screen">
+  <div class="screen-hdr">
+    <button class="back-btn btn" onclick="show('s-home')">← Back</button>
+    <div class="screen-title">Settings</div>
+  </div>
+  <div class="settings-body">
+    <div class="setting-section">
+      <span class="setting-label">Anthropic API Key</span>
+      <input class="setting-input" type="password" id="key-input" placeholder="sk-ant-...">
+      <div class="setting-note">Your key is stored only on this device. Needed to generate AI itineraries.<br>Get a free key at <strong style="color:var(--g);">console.anthropic.com</strong></div>
+      <div id="key-status" class="api-status none">No API key — AI generation disabled. You can still create trips manually.</div>
+      <button class="setting-save btn" onclick="saveKey()">Save API Key</button>
+    </div>
+    <div class="setting-section">
+      <span class="setting-label">About</span>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;">
+        <div style="font-size:12px;color:var(--sub);line-height:1.7;">
+          ✈ Trip Guide — AI travel companion<br>
+          🎧 Tap the green button for voice narration<br>
+          📍 All navigate buttons open Google Maps<br>
+          🌐 Works offline after first load<br>
+          🔊 Tap any phrase to hear it spoken
+        </div>
+      </div>
+    </div>
+    <div class="setting-section">
+      <span class="setting-label">Install as App</span>
+      <button class="setting-save btn" onclick="showInstall()" style="background:linear-gradient(135deg,#1A2A0A,#0A1B0A);color:var(--g);border:1px solid var(--g);">📲 Add to Home Screen</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── SPEAK BUTTON (global, shown only in trip view) ── -->
+<div class="speak-wrap" id="speak-wrap" style="display:none;">
+  <div class="blink sind" id="speak-ind" style="display:none;">🎧 Speaking… tap to stop</div>
+  <button class="sbtn btn" id="speak-btn" onclick="handleSpeak()">🎧</button>
+  <div class="slbl" id="speak-lbl">SPEAK</div>
+</div>
+
+<script>
+// ── PWA SETUP ────────────────────────────────────────────────────────────────
+(function(){
+  // Colorful icon: teal-green-blue gradient globe + white plane + gold star
+  function makeIcon(size){
+    const s=size, r=Math.round(s*0.22);
+    return `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${s} ${s}'>`+
+      `<defs>`+
+      `<linearGradient id='a' x1='0' y1='0' x2='1' y2='1'>`+
+      `<stop offset='0%25' stop-color='%2300C853'/>`+
+      `<stop offset='55%25' stop-color='%23009B77'/>`+
+      `<stop offset='100%25' stop-color='%230066CC'/>`+
+      `</linearGradient>`+
+      `<linearGradient id='b' x1='0' y1='0' x2='1' y2='1'>`+
+      `<stop offset='0%25' stop-color='%2340E0D0'/>`+
+      `<stop offset='100%25' stop-color='%230077B6'/>`+
+      `</linearGradient>`+
+      `</defs>`+
+      `<rect width='${s}' height='${s}' rx='${r}' fill='url(%23a)'/>`+
+      `<circle cx='${s/2}' cy='${s/2}' r='${s*.30}' fill='url(%23b)' opacity='.92'/>`+
+      `<ellipse cx='${s/2}' cy='${s/2}' rx='${s*.30}' ry='${s*.115}' fill='none' stroke='white' stroke-width='${s*.016}' opacity='.4'/>`+
+      `<line x1='${s/2}' y1='${s*.20}' x2='${s/2}' y2='${s*.80}' stroke='white' stroke-width='${s*.016}' opacity='.35'/>`+
+      `<ellipse cx='${s/2}' cy='${s/2}' rx='${s*.115}' ry='${s*.30}' fill='none' stroke='white' stroke-width='${s*.012}' opacity='.25'/>`+
+      `<g transform='translate(${s*.50},${s*.48}) rotate(-40)'>`+
+      `<path d='M-${s*.13} -${s*.04} L${s*.13} -${s*.09} Q${s*.17} -${s*.10} ${s*.17} -${s*.04} Q${s*.17} 0 ${s*.13} -${s*.01} L-${s*.13} -${s*.04}Z' fill='white'/>`+
+      `<path d='M-${s*.02} -${s*.06} L${s*.05} -${s*.17} L${s*.08} -${s*.15} L${s*.02} -${s*.04}Z' fill='white' opacity='.95'/>`+
+      `<path d='M-${s*.01} -${s*.02} L${s*.05} ${s*.08} L${s*.01} ${s*.08} L-${s*.04} -${s*.01}Z' fill='white' opacity='.85'/>`+
+      `<path d='M-${s*.14} -${s*.05} L-${s*.20} -${s*.12} L-${s*.15} -${s*.13} L-${s*.10} -${s*.05}Z' fill='white' opacity='.9'/>`+
+      `</g>`+
+      `<circle cx='${s*.72}' cy='${s*.28}' r='${s*.075}' fill='%23FFD700'/>`+
+      `<text x='${s*.72}' y='${s*.315}' text-anchor='middle' font-size='${s*.08}' fill='%23007A33' font-family='Arial'>&#9733;</text>`+
+      `</svg>`;
+  }
+
+  const icon512 = makeIcon(512);
+  const icon192 = makeIcon(192);
+
+  const m={
+    name:"Trip Guide",
+    short_name:"Trip Guide",
+    description:"AI travel companion for flight crew layovers",
+    display:"standalone",
+    background_color:"#00C853",
+    theme_color:"#1A6B3C",
+    start_url:"./",
+    icons:[
+      {src:icon512, sizes:"512x512", type:"image/svg+xml", purpose:"any"},
+      {src:icon192, sizes:"192x192", type:"image/svg+xml", purpose:"maskable"},
+    ]
+  };
+  const b=new Blob([JSON.stringify(m)],{type:'application/json'});
+  document.getElementById('pwa-manifest').href=URL.createObjectURL(b);
+
+  // Apple touch icon via canvas PNG for best iOS home screen quality
+  try {
+    const canvas=document.createElement('canvas');
+    canvas.width=512; canvas.height=512;
+    const ctx=canvas.getContext('2d');
+    const img=new Image();
+    img.onload=()=>{
+      ctx.drawImage(img,0,0,512,512);
+      document.getElementById('apple-touch-icon-link').href=canvas.toDataURL('image/png');
+    };
+    img.src=icon512;
+  } catch(e){}
+
+  // Service worker
+  if('serviceWorker' in navigator){
+    const sw=`const C='tg-v3';self.addEventListener('install',e=>e.waitUntil(caches.open(C).then(c=>c.addAll([location.href]))));self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).catch(()=>caches.match(location.href)))))`;
+    navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw],{type:'application/javascript'}))).catch(()=>{});
+  }
+})();
+
+// ── INSTALL ───────────────────────────────────────────────────────────────────
+let dPrm=null;
+const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();dPrm=e;});
+function showInstall(){
+  if(dPrm){dPrm.prompt();dPrm.userChoice.then(()=>{dPrm=null;});}
+  else{document.getElementById('ios-ol').classList.remove('hidden');switchTab(isIOS?'iphone':'android');}
+}
+function closeIOS(){document.getElementById('ios-ol').classList.add('hidden');}
+function switchTab(t){
+  document.getElementById('tab-iphone').style.display=t==='iphone'?'':'none';
+  document.getElementById('tab-android').style.display=t==='android'?'':'none';
+  document.querySelectorAll('.itab-btn').forEach((b,i)=>b.classList.toggle('active',(i===0&&t==='iphone')||(i===1&&t==='android')));
+}
+
+// ── STORAGE ───────────────────────────────────────────────────────────────────
+const LS={
+  get:(k,d=null)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch{return d;}},
+  set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch{}},
+};
+const getTrips=()=>LS.get('trips',[]);
+const saveTrips=t=>LS.set('trips',t);
+const getKey=()=>LS.get('apiKey','');
+
+// ── SCREEN NAV ────────────────────────────────────────────────────────────────
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.getElementById('speak-wrap').style.display=id==='s-trip'?'flex':'none';
+  if(id==='s-home') renderHome();
+  if(id==='s-settings') renderSettings();
+}
+
+// ── INTERESTS ─────────────────────────────────────────────────────────────────
+const INTERESTS=[
+  {v:'food',l:'🍽 Food & Culinary'},
+  {v:'music',l:'🎵 Live Music'},
+  {v:'nature',l:'🌿 Nature & Views'},
+  {v:'hiking',l:'🥾 Hiking & Trails'},
+  {v:'culture',l:'🏛 Culture & Art'},
+  {v:'nightlife',l:'🌙 Nightlife'},
+  {v:'crew',l:'✈ Crew Info'},
+];
+(function(){
+  const g=document.getElementById('interests-grid');
+  INTERESTS.forEach(i=>{
+    const c=document.createElement('label');
+    c.className='int-chip btn';
+    c.innerHTML=`<input type="checkbox" value="${i.v}" onchange="this.parentElement.classList.toggle('on',this.checked)"> ${i.l}`;
+    g.appendChild(c);
+  });
+  // Pre-check crew and food
+  document.querySelectorAll('#interests-grid input').forEach(i=>{
+    if(['food','crew'].includes(i.value)){i.checked=true;i.parentElement.classList.add('on');}
+  });
+})();
+
+// ── HOME ──────────────────────────────────────────────────────────────────────
+function renderHome(){
+  const trips=getTrips();
+  const g=document.getElementById('trips-grid');
+  if(!trips.length){
+    g.innerHTML=`<div class="empty-state">
+      <div class="empty-icon">✈</div>
+      <div class="empty-title">No trips yet</div>
+      <div class="empty-sub">Tap "Plan New Trip" to generate your first AI itinerary — just enter a city, hotel, and dates.</div>
+    </div>`;
+    return;
+  }
+  g.innerHTML=trips.map((t,i)=>`
+    <div class="trip-card btn" onclick="openTrip(${i})">
+      <div class="trip-flag">${t.flag||'🌍'}</div>
+      <div style="flex:1;">
+        <div class="trip-city">${E(t.city)}</div>
+        <div class="trip-hotel">${E(t.hotel?.name||'')}</div>
+        <div class="trip-dates">${E(t.arriveLabel||'')} → ${E(t.departLabel||'')}</div>
+      </div>
+      <button class="trip-del btn" onclick="event.stopPropagation();deleteTrip(${i})">🗑</button>
+    </div>`).join('');
+}
+
+function deleteTrip(i){
+  if(!confirm('Delete this trip?')) return;
+  const t=getTrips(); t.splice(i,1); saveTrips(t); renderHome();
+}
+
+// ── SETTINGS ──────────────────────────────────────────────────────────────────
+function renderSettings(){
+  const k=getKey();
+  document.getElementById('key-input').value=k?'sk-ant-••••••••••••':'';
+  const st=document.getElementById('key-status');
+  if(k){st.className='api-status ok';st.textContent='✓ API key saved — AI generation enabled';}
+  else{st.className='api-status none';st.textContent='No API key — AI generation disabled. You can still create trips manually.';}
+  const h=document.getElementById('api-hint');
+  if(h) h.textContent=k?'':'⚠ No API key set. Tap ⚙ Settings to add one, or tap "Create Blank" to build manually.';
+}
+
+function saveKey(){
+  const v=document.getElementById('key-input').value.trim();
+  if(v&&!v.startsWith('sk-ant-'))return alert('That doesn\'t look like an Anthropic key. It should start with sk-ant-');
+  if(v&&!v.includes('•')) LS.set('apiKey',v);
+  renderSettings();
+  document.getElementById('api-hint').textContent='';
+}
+
+// ── HOTEL LOOKUP ──────────────────────────────────────────────────────────────
+window._selectedHotel = null;
+let _hotelLookupTimer = null;
+
+function pickHotel(i){ selectHotel(window._hotelCandidates[i]); }
+
+function closeHotelOl(){ document.getElementById('hotel-ol').classList.add('hidden'); }
+
+function selectHotel(h){
+  window._selectedHotel = h;
+  closeHotelOl();
+  document.getElementById('hotel-lookup-result').innerHTML=`
+    <div class="hotel-status found">
+      ✓ ${E(h.address)}${h.phone?' · '+E(h.phone):''}
+    </div>`;
+}
+
+async function lookupHotel(){
+  const name = document.getElementById('f-hotel').value.trim();
+  const city = document.getElementById('f-city').value.trim();
+  if(!name || !city) return;
+  const key = getKey();
+  if(!key) return; // silently skip if no API key yet
+  const res_el = document.getElementById('hotel-lookup-result');
+  res_el.innerHTML=`<div class="hotel-status"><span class="spin" style="display:inline-block;">⟳</span> Looking up ${E(name)}...</div>`;
+  window._selectedHotel = null;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':key,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true',
+      },
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:600,
+        messages:[{role:'user',content:
+          `Find the hotel named "${name}" in ${city}. Return ONLY a JSON array of matching hotels (1-4 results). If only one exact match exists return an array with one item. Include full address, phone number, and coordinates. No markdown, no explanation.
+Format:
+[{"name":"Full Official Hotel Name","address":"Full street address, city, country","phone":"+1 555 123 4567","lat":35.67,"lng":139.65}]`
+        }]
+      })
+    });
+    const data = await res.json();
+    const txt = data.content?.find(b=>b.type==='text')?.text||'[]';
+    let hotels = null;
+    try { hotels = JSON.parse(txt); } catch { const m=txt.match(/\[[\s\S]*\]/); if(m) hotels=JSON.parse(m[0]); }
+    if(!hotels?.length) throw new Error('No results');
+
+    if(hotels.length === 1){
+      selectHotel(hotels[0]);
+    } else {
+      // Show selection overlay
+      document.getElementById('hotel-ol-sub').textContent = `${hotels.length} hotels found for "${name}" in ${city}. Tap yours.`;
+      document.getElementById('hotel-options').innerHTML = hotels.map((h,i)=>`
+        <div class="hotel-option btn" onclick="pickHotel(${i})">
+          <div class="hotel-opt-name">${E(h.name)}</div>
+          <div class="hotel-opt-addr">📍 ${E(h.address)}</div>
+          ${h.phone?`<div class="hotel-opt-phone">📞 ${E(h.phone)}</div>`:''}
+        </div>`).join('');
+      window._hotelCandidates = hotels;      document.getElementById('hotel-ol').classList.remove('hidden');
+      res_el.innerHTML=`<div class="hotel-status">Tap your hotel above to confirm</div>`;
+    }
+  } catch(e){
+    res_el.innerHTML=`<div class="hotel-status err">⚠ Couldn't look up hotel — address will be filled by AI when generating</div>`;
+  }
+}
+
+// Wire up hotel lookup on name field blur
+document.getElementById('f-hotel').addEventListener('blur',()=>{
+  clearTimeout(_hotelLookupTimer);
+  _hotelLookupTimer = setTimeout(lookupHotel, 400);
+});
+document.getElementById('f-city').addEventListener('blur',()=>{
+  if(document.getElementById('f-hotel').value.trim()) lookupHotel();
+});
+function show_create(){
+  renderSettings(); // update hint
+  show('s-create');
+  // Set today as default arrival date
+  const today=new Date();
+  const fmt=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const tom=new Date(today); tom.setDate(tom.getDate()+1);
+  document.getElementById('f-adate').value=fmt(today);
+  document.getElementById('f-ddate').value=fmt(tom);
+  document.getElementById('f-atime').value='11:00';
+  document.getElementById('f-dtime').value='19:00';
+}
+
+function getFormData(){
+  const interests=[...document.querySelectorAll('#interests-grid input:checked')].map(i=>i.value);
+  const sel=window._selectedHotel||null;
+  return {
+    city:document.getElementById('f-city').value.trim(),
+    country:document.getElementById('f-country').value.trim(),
+    hotelName:document.getElementById('f-hotel').value.trim(),
+    hotelAddr:sel?.address||'',
+    hotelPhone:sel?.phone||'',
+    hotelLat:sel?.lat||null,
+    hotelLng:sel?.lng||null,
+    arriveDate:document.getElementById('f-adate').value,
+    arriveTime:document.getElementById('f-atime').value,
+    departDate:document.getElementById('f-ddate').value,
+    departTime:document.getElementById('f-dtime').value,
+    interests, notes:document.getElementById('f-notes').value.trim(),
+  };
+}
+
+function validateForm(d){
+  if(!d.city) return 'Please enter a city';
+  if(!d.hotelName) return 'Please enter your hotel name';
+  if(!d.arriveDate||!d.departDate) return 'Please enter arrival and departure dates';
+  return null;
+}
+
+function createManual(){
+  const d=getFormData(); const err=validateForm(d); if(err) return alert(err);
+  const trip=buildTrip(d,[
+    makeHotelStop(d),
+    makeDepartureStop(d),
+  ]);
+  const trips=getTrips(); trips.unshift(trip); saveTrips(trips);
+  openTrip(0);
+}
+
+// ── AI GENERATION ─────────────────────────────────────────────────────────────
+async function generateTrip(){
+  const d=getFormData(); const err=validateForm(d); if(err) return alert(err);
+  const key=getKey();
+  if(!key) return alert('No API key set. Go to ⚙ Settings to add your Anthropic API key, or use "Create Blank" to build manually.');
+
+  show('s-loading');
+  document.getElementById('l-city').textContent=d.city.toUpperCase();
+  const steps=['Researching local culture...','Finding hidden culinary gems...','Mapping the best viewpoints...','Generating local phrases...','Checking crew airport procedures...','Putting it all together...'];
+  let si=0;
+  const stepEl=document.getElementById('l-step');
+  const stepInt=setInterval(()=>{stepEl.textContent=steps[si%steps.length];si++;},2200);
+
+  const numDays=daysBetween(d.arriveDate,d.departDate)+1;
+  const interests=d.interests.join(', ')||'food, culture';
+  const hasCrew=d.interests.includes('crew');
+
+  const prompt=`You are an expert local travel guide with deep insider knowledge of ${d.city}, ${d.country}.
+
+A member of airline flight crew (could be pilot or flight attendant) is visiting for ${numDays} day(s):
+- Arrives at ${d.hotelName} on ${fmtDateLabel(d.arriveDate)} at ${fmtTimeTo12(d.arriveTime)}
+- Pickup time for airport on ${fmtDateLabel(d.departDate)}: ${fmtTimeTo12(d.departTime)} (this is when the Uber/taxi picks them up — schedule the departure stop at this time)
+- Interests: ${interests}
+- Special notes: ${d.notes||'None'}
+
+CRITICAL GEOGRAPHIC RULE: Sequence stops to MINIMIZE travel. Group stops in the same neighborhood together. Never send the traveler back and forth across the city. Plan like a local who values their time — route efficiently so each stop flows naturally to the next without backtracking. State the neighborhood for each stop in the category field.
+
+For each stop include a risk assessment:
+- "risk": "low" | "medium" | "high"  
+- "riskNote": one sentence explaining the risk level and time-of-day context (e.g. "Safe neighborhood, busy daytime foot traffic" or "Lively at night but stay aware of surroundings and use Uber to leave")
+
+Include:
+- Hotel check-in as first stop on day 1
+- ${d.interests.includes('food')?'Must-try local dishes at authentic (non-touristy) restaurants — cluster food stops in the same neighborhood as nearby attractions':''}
+- ${d.interests.includes('music')?'Live music venues — schedule at appropriate evening times':''}
+- ${d.interests.includes('nature')||d.interests.includes('hiking')?'Nature spots and viewpoints — FREE viewpoints preferred over paid attractions when possible':''}
+- ${d.interests.includes('culture')?'Cultural experiences — museums, markets, neighborhoods':''}
+- ${d.interests.includes('nightlife')?'Nightlife — include realistic travel time back to hotel':''}
+- Airport departure as last stop on ${fmtDateLabel(d.departDate)}
+
+IMPORTANT: On ${fmtDateLabel(d.departDate)}, mark ALL stops with noAlc:true (flight crew regulations — 12 hours before flight, applies to both pilots and flight attendants).
+
+The "speak" field: 3-4 sentences of rich local guide narration for voice playback.
+The "tip" field: one specific actionable insider tip.
+
+Return ONLY this JSON (no markdown, no code blocks):
+{
+  "flag": "🇯🇵",
+  "days": [
+    {
+      "date": "${d.arriveDate}",
+      "label": "${fmtDateLabel(d.arriveDate)}",
+      "stops": [
+        {
+          "id": "unique_id",
+          "start": 660,
+          "end": 780,
+          "time": "11:00 AM",
+          "endTime": "1:00 PM",
+          "emoji": "🏨",
+          "name": "Venue Name",
+          "category": "Type · Neighborhood Name",
+          "badge": "BADGE TEXT",
+          "type": "hotel|food|music|nature|culture|beach|departure|service|viewpoint",
+          "address": "Full street address",
+          "lat": 35.6762,
+          "lng": 139.6503,
+          "phone": null,
+          "mapsQ": "Venue+Name+City",
+          "hours": "Daily 11 AM – 10 PM",
+          "cost": "~¥2000/pp",
+          "cover": null,
+          "noAlc": false,
+          "risk": "low",
+          "riskNote": "Safe tourist area, very busy during the day",
+          "speak": "Rich narration text for voice playback...",
+          "tip": "One specific insider tip"
+        }
+      ]
+    }
+  ],
+  "phrases": [
+    {
+      "sec": "👋 Greetings",
+      "items": [
+        {"local": "Local phrase", "en": "English meaning", "pr": "pronunciation guide", "sp": "Full spoken explanation with cultural context", "tip": "optional cultural note"}
+      ]
+    }
+  ],
+  "currency": {"code": "JPY", "symbol": "¥", "rateToUSD": 150, "note": "~¥150 = $1 USD"},
+  "safety": ["specific safety tip 1", "specific safety tip 2", "specific safety tip 3"],
+  "transport": ["transport tip 1", "transport tip 2"],
+  "musicScene": "Description of local music culture",
+  ${hasCrew?`"crewInfo": "Detailed flight crew procedures at the main airport serving ${d.city}: which document is required (passport vs crew ID card), location of dedicated crew lanes or crew check-in, any special crew protocols, which terminal, relevant local aviation authority rules. Be airport-specific.",`:''}
+  "localCustoms": ["custom 1", "custom 2", "custom 3"]
+}
+
+Generate ${numDays} day(s). CLUSTER STOPS GEOGRAPHICALLY — no backtracking across the city. Make every stop genuinely useful and locally authentic.`;
+
+  try {
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':key,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true',
+      },
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:4000,
+        messages:[{role:'user',content:prompt}],
+      }),
+    });
+    clearInterval(stepInt);
+    if(!res.ok){
+      const e=await res.json().catch(()=>({error:{message:res.statusText}}));
+      throw new Error(e?.error?.message||`API error ${res.status}`);
+    }
+    const data=await res.json();
+    const txt=data.content?.find(b=>b.type==='text')?.text||'';
+    const json=extractJSON(txt);
+    if(!json) throw new Error('Could not parse AI response. Try again.');
+
+    const trip=buildTrip(d,[],json);
+    const trips=getTrips(); trips.unshift(trip); saveTrips(trips);
+    openTrip(0);
+  } catch(e){
+    clearInterval(stepInt);
+    show('s-create');
+    alert('AI generation failed: '+e.message+'\n\nCheck your API key in Settings, or use "Create Blank" to build manually.');
+  }
+}
+
+function extractJSON(txt){
+  try{return JSON.parse(txt);}catch{}
+  const m=txt.match(/\{[\s\S]*\}/);
+  if(m){try{return JSON.parse(m[0]);}catch{}}
+  return null;
+}
+
+function daysBetween(a,b){
+  const d1=new Date(a),d2=new Date(b);
+  return Math.max(0,Math.round((d2-d1)/(1000*60*60*24)));
+}
+
+function fmtDateLabel(dateStr){
+  if(!dateStr) return '';
+  const d=new Date(dateStr+'T12:00:00');
+  return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+}
+
+function fmtTimeTo12(t){
+  if(!t) return '';
+  const [h,m]=t.split(':').map(Number);
+  const ap=h>=12?'PM':'AM';
+  const h12=h%12||12;
+  return `${h12}:${String(m).padStart(2,'0')} ${ap}`;
+}
+
+function makeHotelStop(d){
+  const [ah,am]=d.arriveTime.split(':').map(Number);
+  const start=ah*60+am;
+  return {id:'checkin',day:1,start,end:start+60,
+    time:fmtTimeTo12(d.arriveTime),endTime:fmtTimeTo12(`${String(ah+1).padStart(2,'0')}:${String(am).padStart(2,'0')}`),
+    emoji:'🏨',name:d.hotelName||'Hotel',category:'Hotel Check-In · Your Base',badge:'YOUR HOTEL',
+    type:'hotel',address:d.hotelAddr||'',phone:d.hotelPhone?`tel:${d.hotelPhone}`:null,
+    mapsQ:encodeURIComponent(d.hotelName).replace(/%20/g,'+'),
+    hours:'Check-in from 3 PM',cost:'Your reservation',cover:null,noAlc:false,
+    speak:`Welcome! You have arrived at ${d.hotelName}. Drop your bags, freshen up, and get ready to explore ${d.city}.`,
+    tip:'Leave passport and extra cash in the room safe.'};
+}
+
+function makeDepartureStop(d){
+  const [dh,dm]=d.departTime.split(':').map(Number);
+  return {id:'airport',start:dh*60+dm,end:dh*60+dm+30,
+    time:fmtTimeTo12(d.departTime),endTime:'—',
+    emoji:'✈️',name:'Depart for Airport',category:`Uber to Airport · ${d.city}`,badge:'DEPARTURE',
+    type:'departure',address:`Depart from: ${d.hotelName}`,phone:null,
+    mapsQ:'Airport+'+encodeURIComponent(d.city).replace(/%20/g,'+'),
+    hours:'Allow 60–90 min for international',cost:'Check ride-share app for estimate',
+    cover:null,noAlc:true,
+    speak:`Your Uber pickup is now. Open the app, your hotel address is pre-filled as pickup. Allow at least ninety minutes for international airports. Check your boarding pass for the correct terminal. Safe travels!`,
+    tip:'Open Uber NOW — destination pre-filled. Check your boarding pass for correct airport and terminal.'};
+}
+
+function buildTrip(d, manualStops=[], aiData=null){
+  const arriveLabel=fmtDateLabel(d.arriveDate);
+  const departLabel=fmtDateLabel(d.departDate);
+  let days=[];
+  if(aiData?.days?.length){
+    days=aiData.days.map((day,i)=>({
+      date:day.date||d.arriveDate,
+      label:day.label||`Day ${i+1}`,
+      noAlcohol: day.date===d.departDate,
+      stops:(day.stops||[]).map((s,j)=>({...s,id:s.id||`s${i}_${j}`,noAlc:s.noAlc||(day.date===d.departDate)})),
+    }));
+  } else {
+    // Manual: bucket all stops into days by date
+    const numDays=daysBetween(d.arriveDate,d.departDate)+1;
+    days=Array.from({length:numDays},(_,i)=>{
+      const dt=new Date(d.arriveDate+'T12:00:00');
+      dt.setDate(dt.getDate()+i);
+      const dateStr=dt.toISOString().split('T')[0];
+      return {date:dateStr,label:fmtDateLabel(dateStr),noAlcohol:dateStr===d.departDate,stops:[]};
+    });
+    // Put hotel stop on day 1, departure on last day
+    if(manualStops.length){
+      days[0].stops.push(manualStops[0]);
+      if(manualStops[1]) days[days.length-1].stops.push(manualStops[1]);
+    }
+  }
+  return {
+    id:Date.now()+'',city:d.city,country:d.country,
+    flag:aiData?.flag||cityFlag(d.city,d.country),
+    hotel:{name:d.hotelName,address:d.hotelAddr,phone:d.hotelPhone},
+    arriveDate:d.arriveDate,departDate:d.departDate,
+    arriveTime:d.arriveTime,departTime:d.departTime,
+    arriveLabel,departLabel,
+    days, phrases:aiData?.phrases||[],
+    currency:aiData?.currency||null,
+    safety:aiData?.safety||[],transport:aiData?.transport||[],
+    musicScene:aiData?.musicScene||'',
+    localCustoms:aiData?.localCustoms||[],
+    crewInfo:aiData?.crewInfo||'',
+    createdAt:Date.now(),
+  };
+}
+
+function cityFlag(city,country){
+  const flags={'japan':'🇯🇵','france':'🇫🇷','italy':'🇮🇹','spain':'🇪🇸',
+    'brazil':'🇧🇷','usa':'🇺🇸','united states':'🇺🇸','uk':'🇬🇧',
+    'germany':'🇩🇪','portugal':'🇵🇹','mexico':'🇲🇽','thailand':'🇹🇭',
+    'greece':'🇬🇷','morocco':'🇲🇦','india':'🇮🇳','australia':'🇦🇺',
+    'argentina':'🇦🇷','colombia':'🇨🇴','peru':'🇵🇪'};
+  const k=(country||city).toLowerCase();
+  for(const [n,f] of Object.entries(flags)) if(k.includes(n)) return f;
+  return '🌍';
+}
+
+// ── TRIP VIEW ─────────────────────────────────────────────────────────────────
+let TRIP=null, DAYI=0, TAB='now', AID=null, SPK=false;
+let GPS={lat:null,lng:null,watching:false,watchId:null};
+
+function openTrip(idx){
+  TRIP=getTrips()[idx]; if(!TRIP) return;
+  DAYI=0; AID=null; TAB='now';
+  document.getElementById('t-city').textContent=(TRIP.flag||'')+' '+TRIP.city.toUpperCase();
+  renderDaySelector();
+  setTab2('now');
+  show('s-trip');
+  setInterval(()=>{
+    document.getElementById('t-time').textContent=fmtNow()+' · '+TRIP.days[DAYI]?.label;
+    if(TAB==='now') rNow();
+  },30000);
+  document.getElementById('t-time').textContent=fmtNow()+' · '+TRIP.days[DAYI]?.label;
+}
+
+function fmtNow(){return new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});}
+
+function renderDaySelector(){
+  const sel=document.getElementById('day-selector');
+  sel.innerHTML=TRIP.days.map((d,i)=>
+    `<button class="day-btn2 btn ${i===DAYI?'active':''}" onclick="selectDay(${i})">${d.label}</button>`
+  ).join('');
+}
+
+function selectDay(i){DAYI=i;AID=null;renderDaySelector();rPane2();}
+
+function setTab2(t){
+  TAB=t;
+  ['now','list','phrases','tips'].forEach(x=>{
+    document.getElementById('tab2-'+x).classList.toggle('active',x===t);
+    document.getElementById('pane-'+x).style.display=x===t?'':'none';
+  });
+  rPane2();
+}
+
+function rPane2(){
+  if(TAB==='now') rNow();
+  else if(TAB==='list') rList();
+  else if(TAB==='phrases') rPhrases2();
+  else rTips2();
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+const min=()=>{const n=new Date();return n.getHours()*60+n.getMinutes();};
+const curDay=()=>TRIP.days[DAYI];
+const stat=s=>{const m=min();if(m>=s.start&&m<s.end)return'now';if(m>=s.end)return'done';return'up';};
+const tlbl=s=>{const st=stat(s),m=min();
+  if(st==='now'){const r=s.end-m;return r<60?r+'m left':Math.floor(r/60)+'h '+(r%60)+'m left';}
+  if(st==='up'){const t=s.start-m;if(t<=0)return s.time;return t<60?'in '+t+'m':'in '+Math.floor(t/60)+'h'+(t%60>0?' '+(t%60)+'m':'');}
+  return'Done ✓';};
+const auto=()=>{const s=curDay()?.stops||[];const m=min();return s.find(x=>m>=x.start&&m<x.end)||s.find(x=>x.start>m)||s[s.length-1]||null;};
+const cur=()=>(curDay()?.stops||[]).find(s=>s.id===AID)||auto();
+const ac=s=>s.type==='hotel'?'b':s.type==='departure'?'gd':s.type==='nature'||s.type==='viewpoint'?'n':'g';
+const E=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const E2=s=>String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+
+function sel2(id){AID=AID===id?null:id;setTab2('now');}
+function maps(q){window.open('https://maps.google.com/?q='+q,'_blank');}
+function callV(p){if(p) window.location.href=p;}
+function uber(address, name){
+  // Try Uber deep link first — opens app with destination pre-filled
+  // Falls back to website if app not installed
+  const dest = encodeURIComponent(address||name||'');
+  const nick = encodeURIComponent(name||address||'Destination');
+  const deepLink = `uber://?action=setPickup&pickup=my_location&dropoff[formatted_address]=${dest}&dropoff[nickname]=${nick}`;
+  const webFallback = `https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[formatted_address]=${dest}&dropoff[nickname]=${nick}`;
+  // Attempt deep link; if app not installed, browser won't navigate — fall back after 1.5s
+  const start = Date.now();
+  window.location.href = deepLink;
+  setTimeout(()=>{
+    // If we're still here after 1.5s, app didn't open — use web fallback
+    if(Date.now()-start < 2000) window.open(webFallback,'_blank');
+  }, 1500);
+}
+
+// ── GPS & LOCATION ────────────────────────────────────────────────────────────
+function startGPS(){
+  if(!navigator.geolocation) return;
+  GPS.watching=true;
+  GPS.watchId=navigator.geolocation.watchPosition(
+    pos=>{
+      GPS.lat=pos.coords.latitude;
+      GPS.lng=pos.coords.longitude;
+      if(TAB==='now') rNow();
+    },
+    ()=>{GPS.watching=false;},
+    {enableHighAccuracy:true,maximumAge:30000,timeout:10000}
+  );
+  if(TAB==='now') rNow();
+}
+
+function stopGPS(){
+  if(GPS.watchId) navigator.geolocation.clearWatch(GPS.watchId);
+  GPS={lat:null,lng:null,watching:false,watchId:null};
+  if(TAB==='now') rNow();
+}
+
+function haversine(lat1,lng1,lat2,lng2){
+  const R=6371, dLat=(lat2-lat1)*Math.PI/180, dLng=(lng2-lng1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function distLabel(km){
+  if(km<1) return Math.round(km*1000)+'m away';
+  return km.toFixed(1)+'km away';
+}
+
+function nearestStop(){
+  if(!GPS.lat) return null;
+  const stops=curDay()?.stops||[];
+  return stops
+    .filter(s=>s.lat&&s.lng&&stat(s)!=='done')
+    .map(s=>({s,d:haversine(GPS.lat,GPS.lng,s.lat,s.lng)}))
+    .sort((a,b)=>a.d-b.d)[0]||null;
+}
+
+function resequenceByLocation(){
+  if(!GPS.lat) return;
+  const day=curDay(); if(!day) return;
+  const stops=[...day.stops];
+  const hotel=stops.find(s=>s.type==='hotel');
+  const dep=stops.find(s=>s.type==='departure');
+  const middle=stops.filter(s=>s.type!=='hotel'&&s.type!=='departure'&&s.lat&&s.lng);
+  // Greedy nearest-neighbor from current location
+  let pos={lat:GPS.lat,lng:GPS.lng}, ordered=[];
+  const pool=[...middle];
+  while(pool.length){
+    let best=null,bestD=Infinity;
+    pool.forEach((s,i)=>{
+      const d=haversine(pos.lat,pos.lng,s.lat,s.lng);
+      if(d<bestD){bestD=d;best=i;}
+    });
+    ordered.push(pool.splice(best,1)[0]);
+    pos={lat:ordered[ordered.length-1].lat,lng:ordered[ordered.length-1].lng};
+  }
+  // Rebuild with hotel first, ordered middle, departure last
+  const reordered=[
+    ...(hotel?[hotel]:[]),
+    ...ordered,
+    ...(dep?[dep]:[]),
+  ];
+  // Reassign times sequentially keeping durations
+  let t=reordered[0]?.start||0;
+  reordered.forEach(s=>{
+    const dur=s.end-s.start;
+    s.start=t; s.end=t+dur; t=s.end+30; // 30 min travel buffer
+  });
+  day.stops=reordered;
+  // Save
+  const trips=getTrips();
+  const idx=trips.findIndex(t2=>t2.id===TRIP.id);
+  if(idx>=0){trips[idx]=TRIP;saveTrips(trips);}
+  AID=null; rPane2();
+}
+
+function riskBadge(s){
+  const r=s.risk;
+  if(!r) return '';
+  const cls=r==='low'?'risk-low':r==='high'?'risk-high':'risk-med';
+  const icon=r==='low'?'🟢':r==='high'?'🔴':'🟡';
+  return `<span class="${cls}">${icon} ${r.toUpperCase()} RISK</span>`;
+}
+
+function riskBlock(s){
+  if(!s.riskNote) return '';
+  const r=s.risk||'low';
+  return `<div class="risk-note ${r==='high'?'high':r==='medium'||r==='med'?'med':'low'}">⚠ ${E(s.riskNote)}</div>`;
+}
+
+// ── NOW PANE ──────────────────────────────────────────────────────────────────
+function rNow(){
+  const c=cur(); const stops=curDay()?.stops||[];
+  const ci=stops.indexOf(c); const nx=ci>=0&&ci<stops.length-1?stops[ci+1]:null;
+  if(!c){document.getElementById('pane-now').innerHTML='<div style="text-align:center;padding:40px;color:var(--sub);">No stops scheduled for this day.</div>';return;}
+  const st=stat(c),isN=st==='now',a=ac(c);
+  const ct2=c.type==='hotel'?'htype':c.type==='departure'?'dtype':(c.type==='nature'||c.type==='viewpoint')?'ntype':'';
+  const nb={g:'bg',b:'bb',gd:'bgd',n:'bn'}[a]||'bg';
+  const lb={g:'blg',b:'blb',gd:'blgd',n:'bln'}[a]||'blg';
+  const hcc={b:'blue',n:'nat'}[a]||'';
+  // GPS distance to current stop
+  let distStr='';
+  if(GPS.lat&&c.lat&&c.lng){const d=haversine(GPS.lat,GPS.lng,c.lat,c.lng);distStr=' · 📍 '+distLabel(d);}
+  let h=`<div class="mc ${isN?'live':'sel'} ${ct2} fade">`;
+  h+=`<div class="br2"><div class="bl2">
+    <span class="badge ${isN?nb:'bsel'}">${isN?'● NOW':'◎ SELECTED'}</span>
+    <span class="badge ${lb}">${E(c.badge)}</span>
+    ${c.noAlc||curDay()?.noAlcohol?'<span class="badge bnalc">🚫 NO ALCOHOL</span>':''}
+    ${riskBadge(c)}
+  </div><span class="tleft">${tlbl(c)}${distStr}</span></div>`;
+  h+=`<div class="tr2">${E(c.time)} — ${E(c.endTime)}</div>`;
+  h+=`<div class="hero2"><span class="hem">${c.emoji||'📍'}</span><div><div class="hn">${E(c.name)}</div><div class="hcat ${hcc}">${E(c.category)}</div></div></div>`;
+  h+=`<div class="dbox">`;
+  if(c.address) h+=`<div class="drow"><span class="dic">📍</span><span class="dtx">${E(c.address)}</span></div>`;
+  if(c.hours)   h+=`<div class="drow"><span class="dic">⏰</span><span class="dtx">${E(c.hours)}</span></div>`;
+  if(c.cost)    h+=`<div class="drow"><span class="dic">💰</span><span class="dtx">${E(c.cost)}</span></div>`;
+  if(c.cover)   h+=`<div class="drow"><span class="dic">🎟</span><span class="dtx">${E(c.cover)}</span></div>`;
+  h+=`</div>`;
+  h+=riskBlock(c);
+  if(c.noAlc||curDay()?.noAlcohol) h+=`<div class="nalcbox"><span>🚫</span><span class="nalctx">No alcohol today — flight crew regulations. Order fresh juice, water, or coffee.</span></div>`;
+  if(c.tip){const tc={b:'b',gd:'gd',n:'nat'}[a]||'';h+=`<div class="tbox ${tc}"><span>💡</span><span class="ttx ${tc}">${E(c.tip)}</span></div>`;}
+  h+=`<div class="arow">`;
+  if(c.type==='departure'||c.type==='hotel'){h+=`<button class="abtn a-b btn" onclick="maps('${E2(c.mapsQ||c.name)}')">📍 Navigate</button><button class="abtn a-uber btn" onclick="uber('${E2(c.address||'')}','${E2(c.name||'')}')">🚗 Uber Here</button>`;}
+  else if(c.type==='nature'||c.type==='viewpoint'){
+    h+=`<button class="abtn a-nat btn" onclick="maps('${E2(c.mapsQ||c.name)}')">📍 Navigate</button>`;
+    h+=`<button class="abtn a-uber btn" onclick="uber('${E2(c.address||'')}','${E2(c.name||'')}')">🚗 Uber</button>`;
+    if(c.phone) h+=`<button class="abtn a-call btn" onclick="callV('${c.phone}')">📞</button>`;
+  } else {
+    h+=`<button class="abtn a-g btn" onclick="maps('${E2(c.mapsQ||c.name)}')">📍 Navigate</button>`;
+    h+=`<button class="abtn a-uber btn" onclick="uber('${E2(c.address||'')}','${E2(c.name||'')}')">🚗 Uber</button>`;
+    if(c.phone) h+=`<button class="abtn a-call btn" onclick="callV('${c.phone}')">📞</button>`;
+  }
+  h+=`</div></div>`;
+  // Hotel banner
+  if(TRIP.hotel?.name) h+=`<div class="hbanner btn" onclick="maps('${E2(TRIP.hotel.name)}')"><span style="font-size:22px;">🏨</span><div><div class="hname">${E(TRIP.hotel.name)}</div><div class="hsub">${E(TRIP.hotel.address||TRIP.city)}</div></div><div class="hact">📍 Map ›</div></div>`;
+  // GPS bar
+  h+=`<div class="gps-bar">
+    <div class="gps-dot ${GPS.watching?'active':''}"></div>
+    <div class="gps-txt">${GPS.watching?(GPS.lat?`Location active${distStr}`:'Getting location...'):'Enable location for distances & smart reorder'}</div>
+    <button class="gps-btn btn" onclick="${GPS.watching?'stopGPS()':'startGPS()'}">
+      ${GPS.watching?'Stop':'📍 Enable'}
+    </button>
+  </div>`;
+  // Nearest stop suggestion
+  if(GPS.lat){
+    const near=nearestStop();
+    if(near&&near.s.id!==c?.id&&near.d<2){
+      h+=`<div class="reseq-banner">
+        <div class="reseq-txt">📍 <strong style="color:var(--tx);">${E(near.s.name)}</strong> is ${distLabel(near.d)} from you — closer than scheduled. Reorder by location?</div>
+        <button class="reseq-btn btn" onclick="resequenceByLocation()">Reorder</button>
+      </div>`;
+    }
+  }
+  // Next up
+  if(nx){
+    let nxDist='';
+    if(GPS.lat&&nx.lat&&nx.lng) nxDist=' · '+distLabel(haversine(GPS.lat,GPS.lng,nx.lat,nx.lng));
+    h+=`<div class="nc2 btn" onclick="sel2('${nx.id}')"><div class="nclbl">Next · ${tlbl(nx)}${nxDist}</div><div class="ncb"><div class="ncin"><span style="font-size:21px;">${nx.emoji||'📍'}</span><div><div class="ncnm">${E(nx.name)}</div><div class="ncsb">${E(nx.time)}${nx.noAlc||curDay()?.noAlcohol?' · 🚫':''} · ${E((nx.cost||'').split('·')[0].trim())}</div></div></div><span style="color:var(--sub);font-size:20px;">›</span></div></div>`;
+  }
+  // Progress
+  h+=`<div class="ps"><div class="plbl">Day progress</div><div class="pbar">`;
+  stops.forEach(x=>{const ss=stat(x),isC=x.id===c.id,a2=ac(x);const cc={g:'cg',b:'cb',gd:'cgd',n:'cn'}[a2]||'cg';h+=`<div class="seg btn ${ss==='done'?'done':''} ${isC?cc:''}" title="${E(x.name)}" onclick="sel2('${x.id}')"></div>`;});
+  h+=`</div><div class="pe"><span style="font-size:9px;color:var(--sub);">${E(stops[0]?.time||'')}</span><span style="font-size:9px;color:var(--sub);">${E(stops[stops.length-1]?.time||'')}</span></div></div>`;
+  document.getElementById('pane-now').innerHTML=h;
+}
+
+// ── LIST PANE ─────────────────────────────────────────────────────────────────
+function rList(){
+  const stops=curDay()?.stops||[]; const c=cur();
+  if(!stops.length){document.getElementById('pane-list').innerHTML='<div style="text-align:center;padding:40px;color:var(--sub);">No stops for this day yet.</div>';return;}
+  let h='';
+  stops.forEach((x,i)=>{
+    const st=stat(x),isC=x.id===c?.id,a2=ac(x);
+    const dc=st==='now'?{g:'lg',b:'lb',gd:'lgd',n:'ln'}[a2]||'lg':st==='done'?'dn':x.type==='hotel'?'hd':'';
+    const sc=isC?{g:'cg',b:'cb',gd:'cgd',n:'cn'}[a2]||'cg':x.type==='hotel'?'hc2':'';
+    const nbg={g:'var(--g)',b:'var(--b)',gd:'var(--gd)',n:'var(--nat)'}[a2]||'var(--g)';
+    h+=`<div class="sitem btn ${st==='done'?'done':''}" onclick="sel2('${x.id}')">
+      <div class="tlcol"><div class="dot ${dc}"></div>${i<stops.length-1?'<div class="tll"></div>':''}</div>
+      <div class="scard ${sc}">
+        <div class="sh"><div class="sl"><span style="font-size:18px;">${x.emoji||'📍'}</span>
+        <div><div class="snm">${E(x.name)}</div><div class="stm">${E(x.time)} – ${E(x.endTime)}</div></div></div>
+        ${st==='now'?`<span class="nowsm" style="background:${nbg};color:#000;">NOW</span>`:''}</div>
+        <div class="sco">${E((x.cost||'').split('·')[0].trim())}</div>
+        ${x.cover?`<div class="scv">🎟 ${E(x.cover)}</div>`:''}
+        ${x.noAlc||curDay()?.noAlcohol?'<div class="sna">🚫 No alcohol</div>':''}
+      </div></div>`;
+  });
+  document.getElementById('pane-list').innerHTML=h;
+}
+
+// ── PHRASES PANE ──────────────────────────────────────────────────────────────
+function rPhrases2(){
+  const phrases=TRIP.phrases||[];
+  if(!phrases.length){
+    document.getElementById('pane-phrases').innerHTML=`<div style="text-align:center;padding:40px;color:var(--sub);">No phrases generated. Create this trip with AI to get local language phrases.</div>`;
+    return;
+  }
+  let h=`<div style="font-size:11px;color:var(--sub);margin-bottom:14px;background:#050C07;border-radius:10px;padding:10px 12px;border:1px solid var(--border);">🔊 Tap any phrase to hear it spoken through your headphones.</div>`;
+  phrases.forEach(sec=>{
+    h+=`<div class="psec2"><div class="psec-title">${E(sec.sec)}</div>`;
+    (sec.items||[]).forEach(p=>{
+      const sp=E2(p.sp||p.local||'');
+      h+=`<div class="pcard btn" onclick="spk('${sp}')">
+        <div class="pin"><div style="flex:1;">
+          <div class="ppt">${E(p.local||p.pt||'')}</div>
+          <div class="pen">${E(p.en||'')}</div>
+          <div class="ppr">${E(p.pr||'')}</div>
+        </div><span style="font-size:20px;flex-shrink:0;margin-left:10px;">🔊</span></div>
+        ${p.tip?`<div class="ptip">💡 ${E(p.tip)}</div>`:''}
+      </div>`;
+    });
+    h+=`</div>`;
+  });
+  document.getElementById('pane-phrases').innerHTML=h;
+}
+
+// ── TIPS PANE ─────────────────────────────────────────────────────────────────
+function rTips2(){
+  const T=TRIP; let h='<div class="tgrid">';
+  // Hotel
+  h+=`<div class="tc blu"><div class="tctit bl">🏨 Hotel & Airport</div>
+    <div class="row"><span class="ic">🏨</span><span class="tx"><strong style="color:var(--b);">${E(T.hotel?.name)}</strong><br>${E(T.hotel?.address||T.city)}</span></div>
+    ${T.hotel?.phone?`<div class="row"><span class="ic">📞</span><span class="tx"><a href="tel:${E(T.hotel.phone)}" style="color:var(--b);">${E(T.hotel.phone)}</a></span></div>`:''}
+    <div class="row"><span class="ic">📅</span><span class="tx">Arrive: <strong style="color:var(--tx);">${E(T.arriveLabel)}</strong> at ${E(fmtTimeTo12(T.arriveTime))}<br>🚗 Pickup: <strong style="color:var(--gd);">${E(T.departLabel)}</strong> at ${E(fmtTimeTo12(T.departTime))}</span></div>
+    <div class="row"><span class="ic">✈</span><span class="tx"><strong style="color:var(--gd);">Uber pickup at ${E(fmtTimeTo12(T.departTime))}</strong> on ${E(T.departLabel)}</span></div>
+  </div>`;
+  // Crew info
+  if(T.crewInfo) h+=`<div class="tc crew"><div class="tctit crew">✈ Crew Airport Procedures</div>
+    <div style="font-size:11px;color:var(--sub);line-height:1.7;">${E(T.crewInfo)}</div>
+  </div>`;
+  // Currency
+  if(T.currency) h+=`<div class="tc"><div class="tctit gd">💱 Currency — ${E(T.currency.code)}</div>
+    <div class="conv"><div class="ciw"><span class="cpfx">${E(T.currency.symbol)}</span>
+    <input class="cinp" type="number" placeholder="0" id="lcl-inp" oninput="cvt2()"/></div>
+    <span style="color:var(--sub);margin:0 6px;">→</span>
+    <div class="cres" id="usd-res2">$0.00</div></div>
+    <div class="cnote">${E(T.currency.note||'')}</div>
+  </div>`;
+  // Safety
+  if(T.safety?.length) h+=`<div class="tc"><div class="tctit or">⚠️ Safety</div>
+    ${T.safety.map(s=>`<div class="row"><span class="ic">•</span><span class="tx">${E(s)}</span></div>`).join('')}
+  </div>`;
+  // Transport
+  if(T.transport?.length) h+=`<div class="tc"><div class="tctit gd">🚗 Getting Around</div>
+    ${T.transport.map(s=>`<div class="row"><span class="ic">•</span><span class="tx">${E(s)}</span></div>`).join('')}
+  </div>`;
+  // Local customs
+  if(T.localCustoms?.length) h+=`<div class="tc"><div class="tctit nat">🙏 Local Customs</div>
+    ${T.localCustoms.map(s=>`<div class="row"><span class="ic">•</span><span class="tx">${E(s)}</span></div>`).join('')}
+  </div>`;
+  // Music
+  if(T.musicScene) h+=`<div class="tc"><div class="tctit gd">🎶 Music Scene</div>
+    <div style="font-size:11px;color:var(--sub);line-height:1.6;">${E(T.musicScene)}</div>
+  </div>`;
+  // Emergency
+  h+=`<div class="tc dang"><div class="tctit rd">🆘 Emergency</div>
+    <div style="font-size:11px;color:var(--sub);margin-bottom:10px;">Always call local emergency numbers. International: 112 works in most countries.</div>
+    <a class="er" href="tel:112"><span class="en2">112</span><span class="el">International Emergency</span></a>
+    <a class="er" href="tel:911"><span class="en2">911</span><span class="el">US Emergency</span></a>
+    ${T.hotel?.phone?`<a class="er" href="tel:${E(T.hotel.phone)}"><span class="en2">${E(T.hotel.phone)}</span><span class="el">${E(T.hotel.name)}</span></a>`:''}
+  </div>`;
+  h+='</div>';
+  document.getElementById('pane-tips').innerHTML=h;
+  // Bind currency
+  const inp=document.getElementById('lcl-inp');
+  if(inp) inp.addEventListener('input',cvt2);
+}
+
+function cvt2(){
+  const T=TRIP; if(!T?.currency) return;
+  const v=parseFloat(document.getElementById('lcl-inp')?.value);
+  const r=document.getElementById('usd-res2');
+  if(!r) return;
+  if(v&&!isNaN(v)){r.textContent='$'+(v/T.currency.rateToUSD).toFixed(2);r.classList.add('v');}
+  else{r.textContent='$0.00';r.classList.remove('v');}
+}
+
+// ── VOICE ────────────────────────────────────────────────────────────────────
+function spk(txt){
+  if(!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(txt);
+  u.rate=0.88;u.pitch=1.05;u.volume=1;
+  u.onstart=()=>setSPK(true);u.onend=()=>setSPK(false);u.onerror=()=>setSPK(false);
+  window.speechSynthesis.speak(u);
+}
+function handleSpeak(){
+  if(SPK){window.speechSynthesis?.cancel();setSPK(false);return;}
+  const c=cur(); if(!c) return;
+  const stops=curDay()?.stops||[];
+  const i=stops.indexOf(c);
+  const nx=i>=0&&i<stops.length-1?stops[i+1]:null;
+  spk(c.name+'. '+(c.speak||c.tip||'')+' '+(nx?'Next up: '+nx.name+' at '+nx.time+'.':'That is the last stop. Safe travels!'));
+}
+function setSPK(v){
+  SPK=v;
+  document.getElementById('speak-btn').textContent=v?'⏹':'🎧';
+  document.getElementById('speak-btn').classList.toggle('stop',v);
+  document.getElementById('speak-ind').style.display=v?'':'none';
+  document.getElementById('speak-lbl').textContent=v?'STOP':'SPEAK';
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+// Override show('s-create') to use our init version
+const _origShow=show;
+document.getElementById('s-create') && (()=>{
+  document.querySelectorAll('[onclick*="s-create"]').forEach(b=>{
+    b.setAttribute('onclick',"show_create()");
+  });
+})();
+
+// Update API hint on create screen open
+document.getElementById('api-hint').textContent=getKey()?'':'⚠ No API key — tap ⚙ Settings to add one, or use "Create Blank".';
+
+renderHome();
+</script>
+</body>
+</html>
