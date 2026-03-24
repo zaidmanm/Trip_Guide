@@ -551,74 +551,163 @@ input:focus,textarea:focus,select:focus{outline:none;}
 
 <script>
 // ── PWA SETUP ────────────────────────────────────────────────────────────────
+// Chrome Android IGNORES blob: manifest URLs → must use data: URI or real file.
+// We render the icon to canvas (real PNG), embed it in the manifest as base64,
+// then set the manifest as a data: URI. This makes "Add to Home Screen" from
+// Chrome's ⋮ menu use our icon + name + standalone display correctly.
 (function(){
-  // Colorful icon: teal-green-blue gradient globe + white plane + gold star
-  function makeIcon(size){
-    const s=size, r=Math.round(s*0.22);
-    return `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${s} ${s}'>`+
-      `<defs>`+
-      `<linearGradient id='a' x1='0' y1='0' x2='1' y2='1'>`+
-      `<stop offset='0%25' stop-color='%2300C853'/>`+
-      `<stop offset='55%25' stop-color='%23009B77'/>`+
-      `<stop offset='100%25' stop-color='%230066CC'/>`+
-      `</linearGradient>`+
-      `<linearGradient id='b' x1='0' y1='0' x2='1' y2='1'>`+
-      `<stop offset='0%25' stop-color='%2340E0D0'/>`+
-      `<stop offset='100%25' stop-color='%230077B6'/>`+
-      `</linearGradient>`+
-      `</defs>`+
-      `<rect width='${s}' height='${s}' rx='${r}' fill='url(%23a)'/>`+
-      `<circle cx='${s/2}' cy='${s/2}' r='${s*.30}' fill='url(%23b)' opacity='.92'/>`+
-      `<ellipse cx='${s/2}' cy='${s/2}' rx='${s*.30}' ry='${s*.115}' fill='none' stroke='white' stroke-width='${s*.016}' opacity='.4'/>`+
-      `<line x1='${s/2}' y1='${s*.20}' x2='${s/2}' y2='${s*.80}' stroke='white' stroke-width='${s*.016}' opacity='.35'/>`+
-      `<ellipse cx='${s/2}' cy='${s/2}' rx='${s*.115}' ry='${s*.30}' fill='none' stroke='white' stroke-width='${s*.012}' opacity='.25'/>`+
-      `<g transform='translate(${s*.50},${s*.48}) rotate(-40)'>`+
-      `<path d='M-${s*.13} -${s*.04} L${s*.13} -${s*.09} Q${s*.17} -${s*.10} ${s*.17} -${s*.04} Q${s*.17} 0 ${s*.13} -${s*.01} L-${s*.13} -${s*.04}Z' fill='white'/>`+
-      `<path d='M-${s*.02} -${s*.06} L${s*.05} -${s*.17} L${s*.08} -${s*.15} L${s*.02} -${s*.04}Z' fill='white' opacity='.95'/>`+
-      `<path d='M-${s*.01} -${s*.02} L${s*.05} ${s*.08} L${s*.01} ${s*.08} L-${s*.04} -${s*.01}Z' fill='white' opacity='.85'/>`+
-      `<path d='M-${s*.14} -${s*.05} L-${s*.20} -${s*.12} L-${s*.15} -${s*.13} L-${s*.10} -${s*.05}Z' fill='white' opacity='.9'/>`+
-      `</g>`+
-      `<circle cx='${s*.72}' cy='${s*.28}' r='${s*.075}' fill='%23FFD700'/>`+
-      `<text x='${s*.72}' y='${s*.315}' text-anchor='middle' font-size='${s*.08}' fill='%23007A33' font-family='Arial'>&#9733;</text>`+
-      `</svg>`;
+
+  // Draw icon on canvas → returns base64 PNG data URI
+  function drawIcon(size){
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = size;
+    const c = cv.getContext('2d');
+    const half = size / 2;
+
+    // Background: vivid green → teal → blue gradient
+    const bg = c.createLinearGradient(0, 0, size, size);
+    bg.addColorStop(0,   '#00C853');
+    bg.addColorStop(0.45,'#00897B');
+    bg.addColorStop(1,   '#0066CC');
+    const radius = size * 0.22;
+    c.beginPath();
+    c.moveTo(radius, 0);
+    c.lineTo(size - radius, 0);
+    c.quadraticCurveTo(size, 0, size, radius);
+    c.lineTo(size, size - radius);
+    c.quadraticCurveTo(size, size, size - radius, size);
+    c.lineTo(radius, size);
+    c.quadraticCurveTo(0, size, 0, size - radius);
+    c.lineTo(0, radius);
+    c.quadraticCurveTo(0, 0, radius, 0);
+    c.fillStyle = bg;
+    c.fill();
+
+    // Globe: aqua circle
+    const globe = c.createRadialGradient(half*0.85, half*0.75, 0, half, half, half*0.62);
+    globe.addColorStop(0, '#80DEEA');
+    globe.addColorStop(1, '#0077B6');
+    c.beginPath();
+    c.arc(half, half, half * 0.60, 0, Math.PI * 2);
+    c.fillStyle = globe;
+    c.fill();
+
+    // Globe grid lines
+    c.strokeStyle = 'rgba(255,255,255,0.4)';
+    c.lineWidth = size * 0.015;
+    // Equator
+    c.beginPath();
+    c.ellipse(half, half, half*0.60, half*0.22, 0, 0, Math.PI*2);
+    c.stroke();
+    // Vertical meridian
+    c.beginPath();
+    c.ellipse(half, half, half*0.22, half*0.60, 0, 0, Math.PI*2);
+    c.stroke();
+
+    // Plane: white silhouette
+    c.save();
+    c.translate(half * 1.02, half * 0.98);
+    c.rotate(-0.65); // ~-37 degrees
+    const ps = size * 0.28;
+    c.fillStyle = 'white';
+    // Fuselage
+    c.beginPath();
+    c.ellipse(0, 0, ps * 0.55, ps * 0.13, 0, 0, Math.PI * 2);
+    c.fill();
+    // Nose cone
+    c.beginPath();
+    c.moveTo(ps * 0.42, -ps * 0.04);
+    c.lineTo(ps * 0.68, 0);
+    c.lineTo(ps * 0.42, ps * 0.04);
+    c.fill();
+    // Left wing
+    c.beginPath();
+    c.moveTo(ps * 0.05, -ps * 0.03);
+    c.lineTo(ps * 0.30,  -ps * 0.40);
+    c.lineTo(ps * 0.42, -ps * 0.32);
+    c.lineTo(ps * 0.18, -ps * 0.03);
+    c.fill();
+    // Right wing
+    c.beginPath();
+    c.moveTo(ps * 0.08, ps * 0.03);
+    c.lineTo(ps * 0.28,  ps * 0.38);
+    c.lineTo(ps * 0.40,  ps * 0.30);
+    c.lineTo(ps * 0.20,  ps * 0.03);
+    c.fill();
+    // Tail fin
+    c.beginPath();
+    c.moveTo(-ps * 0.42, -ps * 0.04);
+    c.lineTo(-ps * 0.60, -ps * 0.28);
+    c.lineTo(-ps * 0.44, -ps * 0.22);
+    c.lineTo(-ps * 0.34, -ps * 0.02);
+    c.fill();
+    c.restore();
+
+    // Gold star badge top-right
+    const sr = size * 0.12;
+    const sx = size * 0.78, sy = size * 0.22;
+    const starGrad = c.createRadialGradient(sx-sr*0.2, sy-sr*0.2, 0, sx, sy, sr);
+    starGrad.addColorStop(0, '#FFE57F');
+    starGrad.addColorStop(1, '#F9A825');
+    c.beginPath();
+    c.arc(sx, sy, sr, 0, Math.PI * 2);
+    c.fillStyle = starGrad;
+    c.fill();
+    // Star shape
+    c.fillStyle = '#004D20';
+    c.font = `bold ${size*0.13}px Arial`;
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.fillText('✈', sx, sy + size*0.005);
+
+    return cv.toDataURL('image/png');
   }
 
-  const icon512 = makeIcon(512);
-  const icon192 = makeIcon(192);
+  // Build icon and wire up manifest + apple touch icon
+  function init(){
+    const png = drawIcon(512);
 
-  const m={
-    name:"Trip Guide",
-    short_name:"Trip Guide",
-    description:"AI travel companion for flight crew layovers",
-    display:"standalone",
-    background_color:"#00C853",
-    theme_color:"#1A6B3C",
-    start_url:"./",
-    icons:[
-      {src:icon512, sizes:"512x512", type:"image/svg+xml", purpose:"any"},
-      {src:icon192, sizes:"192x192", type:"image/svg+xml", purpose:"maskable"},
-    ]
-  };
-  const b=new Blob([JSON.stringify(m)],{type:'application/json'});
-  document.getElementById('pwa-manifest').href=URL.createObjectURL(b);
-
-  // Apple touch icon via canvas PNG for best iOS home screen quality
-  try {
-    const canvas=document.createElement('canvas');
-    canvas.width=512; canvas.height=512;
-    const ctx=canvas.getContext('2d');
-    const img=new Image();
-    img.onload=()=>{
-      ctx.drawImage(img,0,0,512,512);
-      document.getElementById('apple-touch-icon-link').href=canvas.toDataURL('image/png');
+    // Manifest as data: URI (base64) — Chrome Android reads this correctly
+    const manifest = {
+      name: 'Trip Guide',
+      short_name: 'Trip Guide',
+      description: 'AI travel companion for flight crew layovers',
+      display: 'standalone',
+      orientation: 'portrait',
+      background_color: '#00C853',
+      theme_color: '#00C853',
+      start_url: './',
+      icons: [
+        { src: png, sizes: '512x512', type: 'image/png', purpose: 'any' },
+        { src: png, sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+      ]
     };
-    img.src=icon512;
-  } catch(e){}
+    const b64 = btoa(JSON.stringify(manifest));
+    document.getElementById('pwa-manifest').href = 'data:application/manifest+json;base64,' + b64;
 
-  // Service worker
-  if('serviceWorker' in navigator){
-    const sw=`const C='tg-v3';self.addEventListener('install',e=>e.waitUntil(caches.open(C).then(c=>c.addAll([location.href]))));self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).catch(()=>caches.match(location.href)))))`;
-    navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw],{type:'application/javascript'}))).catch(()=>{});
+    // Apple touch icon for iOS
+    const atil = document.getElementById('apple-touch-icon-link');
+    if(atil) atil.href = png;
+
+    // Service worker (provides offline caching)
+    if('serviceWorker' in navigator){
+      const sw = `const C='tg-v4';
+self.addEventListener('install', e=>{ self.skipWaiting(); e.waitUntil(caches.open(C).then(c=>c.addAll([location.href]))); });
+self.addEventListener('activate', e=>{ e.waitUntil(clients.claim()); });
+self.addEventListener('fetch', e=>{ e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request))); });`;
+      try {
+        navigator.serviceWorker.register(
+          URL.createObjectURL(new Blob([sw], {type:'application/javascript'})),
+          {scope: './'}
+        ).catch(()=>{});
+      } catch(e){}
+    }
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
   }
 })();
 
