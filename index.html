@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0b1f33">
+<title>24 Hours in Stockholm</title>
+<style>
+  :root{
+    --ink:#0b1f33;        /* deep Nordic night-water */
+    --ink-2:#183859;
+    --paper:#f5f7fa;      /* pale winter light */
+    --card:#ffffff;
+    --mist:#dfe7ef;
+    --line:#c8d4e0;
+    --amber:#d98b3a;      /* warm romantic lamplight */
+    --amber-deep:#b96f22;
+    --sky:#3a6ea5;        /* archipelago blue */
+    --muted:#5c6b7a;
+    --good:#2f7d5b;
+    --shadow:0 6px 22px rgba(11,31,51,.10);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--paper);color:var(--ink);
+    line-height:1.5;-webkit-font-smoothing:antialiased;
+    padding-bottom:96px; /* room for sticky bar */
+  }
+
+  /* ---------- Header ---------- */
+  header{
+    background:linear-gradient(160deg,var(--ink) 0%,var(--ink-2) 100%);
+    color:#fff;padding:26px 20px 22px;
+    padding-top:calc(26px + env(safe-area-inset-top));
+    position:relative;overflow:hidden;
+  }
+  header::after{ /* subtle aurora arc */
+    content:"";position:absolute;right:-60px;top:-70px;width:220px;height:220px;
+    background:radial-gradient(circle,rgba(217,139,58,.35),transparent 70%);
+  }
+  .eyebrow{font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:#9fb6cf;margin:0 0 6px}
+  h1{font-family:Georgia,"Times New Roman",serif;font-weight:600;font-size:30px;line-height:1.12;margin:0}
+  h1 em{color:var(--amber);font-style:italic}
+  .sub{margin:10px 0 0;color:#c6d4e2;font-size:14.5px;max-width:34ch}
+  .hotel-pill{
+    display:inline-flex;align-items:center;gap:7px;margin-top:14px;
+    background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);
+    padding:8px 13px;border-radius:999px;font-size:13px;color:#eaf1f8;text-decoration:none;
+  }
+  .hotel-pill:active{background:rgba(255,255,255,.22)}
+
+  /* ---------- Map ---------- */
+  #map{width:100%;height:300px;background:var(--mist);display:block;border-bottom:1px solid var(--line)}
+  .map-note{font-size:12px;color:var(--muted);text-align:center;padding:8px 16px 0}
+
+  /* ---------- Progress rail ---------- */
+  .rail{display:flex;gap:6px;padding:16px 16px 4px;overflow-x:auto;scrollbar-width:none}
+  .rail::-webkit-scrollbar{display:none}
+  .rail button{
+    flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:var(--muted);
+    font-size:12.5px;font-weight:600;padding:7px 12px;border-radius:999px;cursor:pointer;
+    display:flex;align-items:center;gap:6px;transition:.15s;
+  }
+  .rail button .n{
+    display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;
+    border-radius:50%;background:var(--mist);color:var(--ink);font-size:11px;font-weight:700;
+  }
+  .rail button.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .rail button.active .n{background:var(--amber);color:#fff}
+  .rail button.done .n{background:var(--good);color:#fff}
+
+  /* ---------- Stop cards ---------- */
+  main{padding:8px 16px 20px}
+  .stop{
+    background:var(--card);border:1px solid var(--line);border-radius:18px;
+    margin:14px 0;box-shadow:var(--shadow);overflow:hidden;scroll-margin-top:14px;
+  }
+  .stop.active{border-color:var(--amber);box-shadow:0 8px 26px rgba(185,111,34,.18)}
+  .stop-head{display:flex;gap:14px;padding:16px 16px 14px;align-items:flex-start;cursor:pointer}
+  .badge{
+    flex:0 0 auto;width:46px;height:46px;border-radius:14px;background:var(--ink);color:#fff;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;
+  }
+  .stop.active .badge{background:var(--amber)}
+  .stop.done .badge{background:var(--good)}
+  .badge .num{font-size:19px;font-weight:700}
+  .badge .clk{font-size:9px;letter-spacing:.04em;margin-top:2px;opacity:.85}
+  .stop-head .h{flex:1;min-width:0}
+  .time{font-size:12px;font-weight:700;letter-spacing:.04em;color:var(--amber-deep);text-transform:uppercase}
+  .title{font-family:Georgia,serif;font-size:19px;font-weight:600;margin:2px 0 3px;line-height:1.2}
+  .where{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:5px}
+  .chev{flex:0 0 auto;color:var(--muted);font-size:20px;transition:transform .2s;margin-top:6px}
+  .stop.open .chev{transform:rotate(180deg)}
+
+  .body{max-height:0;overflow:hidden;transition:max-height .32s ease}
+  .stop.open .body{max-height:900px}
+  .body-inner{padding:0 16px 16px}
+  .desc{font-size:15px;color:#233240;margin:2px 0 12px}
+  .meta{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
+  .tag{font-size:12px;background:var(--mist);color:var(--ink-2);padding:5px 10px;border-radius:8px}
+  .tag.open-now{background:#e2f2ea;color:var(--good);font-weight:600}
+  .tag.closed{background:#f6e2e2;color:#a23b3b;font-weight:600}
+
+  .actions{display:flex;gap:10px}
+  .btn{
+    flex:1;text-decoration:none;text-align:center;font-weight:700;font-size:14.5px;
+    padding:14px 10px;border-radius:13px;border:0;cursor:pointer;display:flex;
+    align-items:center;justify-content:center;gap:7px;
+  }
+  .btn-go{background:var(--amber);color:#fff}
+  .btn-go:active{background:var(--amber-deep)}
+  .btn-mark{background:var(--paper);color:var(--ink);border:1.5px solid var(--line)}
+  .btn-mark:active{background:var(--mist)}
+  .stop.done .btn-mark{background:#e2f2ea;border-color:#bfe0cf;color:var(--good)}
+
+  /* ---------- Phrasebook ---------- */
+  .phrase-wrap{padding:8px 16px 24px}
+  .phrase-head h2{font-family:Georgia,serif;font-size:22px;font-weight:600;margin:14px 0 4px}
+  .phrase-head p{font-size:14px;color:var(--muted);margin:0 0 16px;max-width:44ch}
+  .phrase-head em{color:var(--amber-deep);font-style:italic}
+
+  .rules{
+    display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:18px;
+    background:var(--ink);border-radius:16px;padding:16px;
+  }
+  .rule{color:#dbe6f1;font-size:13.5px;display:flex;align-items:baseline;gap:10px;line-height:1.4}
+  .rule .k{
+    flex:0 0 auto;font-family:Georgia,serif;font-size:17px;font-weight:700;color:var(--amber);
+    min-width:34px;text-align:center;background:rgba(217,139,58,.14);border-radius:8px;padding:2px 0;
+  }
+  .rule strong{color:#fff}
+  .rule em{color:#9fb6cf;font-style:normal;font-weight:600}
+
+  .pgroup{margin-bottom:18px}
+  .pgroup h3{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 8px;font-weight:700}
+  .phrase{
+    display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);
+    border-radius:14px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:.12s;
+    box-shadow:var(--shadow);
+  }
+  .phrase:active{background:var(--mist)}
+  .phrase.playing{border-color:var(--amber);box-shadow:0 0 0 3px rgba(217,139,58,.16)}
+  .phrase .txt{flex:1;min-width:0}
+  .phrase .sv{font-weight:700;font-size:16px;color:var(--ink)}
+  .phrase .en{font-size:13px;color:var(--muted)}
+  .phrase .ph{font-size:12.5px;color:var(--amber-deep);font-style:italic;margin-top:1px}
+  .phrase .play{
+    flex:0 0 auto;width:42px;height:42px;border-radius:50%;background:var(--paper);
+    border:1.5px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--ink);
+  }
+  .phrase.playing .play{background:var(--amber);border-color:var(--amber);color:#fff}
+  .no-audio{font-size:12px;color:#a23b3b;background:#f6e2e2;border-radius:10px;padding:10px 12px;margin-bottom:14px;display:none}
+
+  /* ---------- Sticky current-stop bar ---------- */
+  .nowbar{
+    position:fixed;left:0;right:0;bottom:0;z-index:50;
+    background:rgba(255,255,255,.94);backdrop-filter:blur(12px);
+    border-top:1px solid var(--line);
+    padding:10px 14px calc(10px + env(safe-area-inset-bottom));
+    display:flex;align-items:center;gap:12px;box-shadow:0 -4px 20px rgba(11,31,51,.08);
+  }
+  .nowbar .info{flex:1;min-width:0}
+  .nowbar .lbl{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .nowbar .name{font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .nowbar a{
+    flex:0 0 auto;background:var(--ink);color:#fff;text-decoration:none;font-weight:700;
+    font-size:14px;padding:12px 16px;border-radius:12px;display:flex;align-items:center;gap:7px;
+  }
+  .nowbar a:active{background:var(--ink-2)}
+
+  footer{text-align:center;color:var(--muted);font-size:12px;padding:6px 20px 24px}
+  svg{display:block}
+</style>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">24 Hours · Stockholm</p>
+  <h1>A <em>Romantic</em> Walk Through the Old City</h1>
+  <p class="sub">Everything below is a short, gentle stroll from your hotel — art and music, classic Swedish food, and the cobblestones of Gamla Stan.</p>
+  <a class="hotel-pill" id="hotelLink" target="_blank" rel="noopener">
+    🛎️ Haymarket by Scandic · Hötorget 13–15
+  </a>
+</header>
+
+<div id="map"></div>
+<p class="map-note">Tap a pin to jump to that stop. Tap <strong>Walk here</strong> in any card for turn-by-turn directions.</p>
+
+<div class="rail" id="rail"></div>
+
+<main id="stops"></main>
+
+<section class="phrase-wrap">
+  <div class="phrase-head">
+    <h2>A few words of Swedish</h2>
+    <p>Tap any phrase to hear it. Swedes speak English beautifully — but a warm <em>tack</em> goes a long way.</p>
+  </div>
+
+  <div class="rules">
+    <div class="rule"><span class="k">å</span> sounds like the <strong>o</strong> in "more" → <em>oh</em></div>
+    <div class="rule"><span class="k">ä</span> sounds like the <strong>e</strong> in "bed" → <em>eh</em></div>
+    <div class="rule"><span class="k">ö</span> like the <strong>u</strong> in "fur" (rounded) → <em>ur</em></div>
+    <div class="rule"><span class="k">sk</span> before e/i/y/ä/ö → a soft <strong>"sh"</strong> (sked = "shehd")</div>
+    <div class="rule"><span class="k">j</span> is a <strong>y</strong> sound → ja = "yah"</div>
+    <div class="rule"><span class="k">g</span> before e/i/y → often a <strong>y</strong> → "gärna" = "YAIR-na"</div>
+  </div>
+
+  <div id="phrases"></div>
+</section>
+
+<div class="nowbar">
+  <div class="info">
+    <div class="lbl">Next up</div>
+    <div class="name" id="nowName">—</div>
+  </div>
+  <a id="nowGo" target="_blank" rel="noopener">🧭 Walk here</a>
+</div>
+
+<footer>Live hours shown are approximate — always worth a quick confirm. Have a wonderful day. ✨</footer>
+
+<script>
+const HOTEL = {name:"Haymarket by Scandic", lat:59.3346972, lng:18.0615403, placeId:"ChIJg1jTQ2edX0YRvNl-o8NOVqA"};
+
+const STOPS = [
+  {
+    time:"10:00 AM", clk:"10a", num:1,
+    title:"Konserthuset — Art & Music",
+    where:"Hötorget 8",
+    lat:59.3350675, lng:18.0629346, placeId:"ChIJT9sAjF2dX0YRwWw-tRXgeJI",
+    desc:"Directly across the square from your hotel. Outside stands Carl Milles' famous Orpheus Group sculpture; inside, Isaac Grünewald's vibrant murals. Check the box office for a morning tour, a daytime \"Soup Concert,\" or an open rehearsal.",
+    tags:["🎻 Concert hall","🚶 2 min from hotel","🎨 Sculpture outside"],
+    hours:{1:[720,1080],2:[720,1080],3:[720,1080],4:[720,1080],5:[720,1080],6:[660,900]} // Mon-Fri 12-6, Sat 11-3, Sun closed
+  },
+  {
+    time:"12:30 PM", clk:"12:30p", num:2,
+    title:"Lunch — Prinsen or Hötorgshallen",
+    where:"Mäster Samuelsgatan 4",
+    lat:59.3343917, lng:18.0732944, placeId:"ChIJjSueX_l3X0YRUCBOFOOEdLo",
+    desc:"For an upscale, romantic classic, walk 5 minutes to Prinsen — a century-old brasserie loved for its traditional Swedish meatballs. Prefer a casual local vibe? Duck into Hötorgshallen market and find Kajsas Fisk for legendary Swedish fish soup.",
+    tags:["🍽️ Swedish classic","⭐ 4.4 · since 1897","🐟 Market alt nearby"],
+    hours:{1:[690,1350],2:[690,1410],3:[690,1410],4:[690,1410],5:[690,1410],6:[720,1410],0:[780,1350]},
+    alt:{name:"Hötorgshallen (Kajsas Fisk)", lat:59.3342674, lng:18.0627348, placeId:"ChIJt-rFEV-dX0YR8pASKtKXAgg"}
+  },
+  {
+    time:"2:00 PM", clk:"2p", num:3,
+    title:"Stroll through Kungsträdgården",
+    where:"King's Garden → Gamla Stan",
+    lat:59.3310904, lng:18.071865, placeId:"ChIJBYJFRVmdX0YR_ACqwqyi8B0",
+    desc:"Walk down Drottninggatan toward the water, passing through the King's Garden. Then cross the bridge into Gamla Stan — the Old Town's cobblestones, colorful 17th-century façades, and quiet alleys are the most romantic corner of the city.",
+    tags:["🌳 Park","📸 Cherry blossoms in spring","🚶 Gentle walk"],
+    hours:"always"
+  },
+  {
+    time:"4:00 PM", clk:"4p", num:4,
+    title:"Fika at Chokladkoppen",
+    where:"Stortorget 18, Gamla Stan",
+    lat:59.3249363, lng:18.0703216, placeId:"ChIJo2U_YeJ3X0YRXSYHUFNAWbo",
+    desc:"Pause in Stortorget, the Old Town's historic main square. Share a warm cinnamon or cardamom bun over coffee — the Swedish ritual of fika — with the iconic colorful houses in view.",
+    tags:["☕ Fika","🥮 Cinnamon buns","🏛️ Historic square"],
+    hours:{0:[540,1320],1:[540,1320],2:[540,1320],3:[540,1320],4:[540,1320],5:[540,1380],6:[540,1380]}
+  },
+  {
+    time:"7:00 PM", clk:"7p", num:5,
+    title:"Dinner at Den Gyldene Freden",
+    where:"Österlånggatan 51",
+    lat:59.3231727, lng:18.0737898, placeId:"ChIJo2D60OJ3X0YRpSgBrukx24o",
+    desc:"An unforgettable candlelit dinner in the Guinness-recognized oldest restaurant in the world with an unaltered interior (since 1722). Elevated Swedish classics — Baltic herring, veal, Toast Skagen — in a deeply cozy historic room. Reserve ahead.",
+    tags:["🕯️ Romantic","🏆 Since 1722","📞 Book a table"],
+    hours:{1:[720,1380],2:[720,1380],3:[720,1380],4:[720,1380],5:[720,1440],6:[720,1440]} // Sun closed
+  },
+  {
+    time:"Next morning", clk:"AM", num:6,
+    title:"Breakfast at your hotel",
+    where:"Haymarket by Scandic",
+    lat:59.3346972, lng:18.0615403, placeId:"ChIJg1jTQ2edX0YRvNl-o8NOVqA",
+    desc:"Close the trip in the 1920s Greta Garbo–inspired dining room with the hotel's breakfast buffet before you check out. A gentle end to 24 wonderful hours.",
+    tags:["🍳 Buffet","🎬 Art-deco charm","🛎️ Back at base"],
+    hours:"always"
+  }
+];
+
+/* ---- helpers ---- */
+function gmapsSearch(s){
+  const q = encodeURIComponent(s.title.replace(/—.*/,'').trim()+" "+s.where);
+  return s.placeId
+    ? `https://www.google.com/maps/search/?api=1&query=${q}&query_place_id=${s.placeId}`
+    : `https://www.google.com/maps/search/?api=1&query=${q}`;
+}
+function gmapsWalk(s){
+  const dest = `${s.lat},${s.lng}`;
+  let url = `https://www.google.com/maps/dir/?api=1&destination=${dest}&travelmode=walking`;
+  if(s.placeId) url += `&destination_place_id=${s.placeId}`;
+  return url;
+}
+function openStatus(hours){
+  if(hours==="always") return {txt:"Open 24 hours",cls:"open-now"};
+  const now = new Date();
+  const day = now.getDay(); // 0=Sun
+  const mins = now.getHours()*60 + now.getMinutes();
+  const today = hours[day];
+  if(!today) return {txt:"Closed today",cls:"closed"};
+  const [o,c] = today;
+  return (mins>=o && mins<c)
+    ? {txt:"Open now",cls:"open-now"}
+    : {txt:"Closed now",cls:"closed"};
+}
+
+/* ---- state ---- */
+const done = new Set();
+let active = 0;
+
+/* ---- render stops ---- */
+const stopsEl = document.getElementById('stops');
+STOPS.forEach((s,i)=>{
+  const st = openStatus(s.hours);
+  const el = document.createElement('article');
+  el.className='stop'+(i===0?' active open':'');
+  el.id='stop-'+i;
+  el.innerHTML = `
+    <div class="stop-head" data-toggle="${i}">
+      <div class="badge"><span class="num">${s.num}</span><span class="clk">${s.clk}</span></div>
+      <div class="h">
+        <div class="time">${s.time}</div>
+        <div class="title">${s.title}</div>
+        <div class="where">📍 ${s.where}</div>
+      </div>
+      <div class="chev">⌄</div>
+    </div>
+    <div class="body"><div class="body-inner">
+      <p class="desc">${s.desc}</p>
+      <div class="meta">
+        <span class="tag ${st.cls}">${st.txt}</span>
+        ${s.tags.map(t=>`<span class="tag">${t}</span>`).join('')}
+      </div>
+      <div class="actions">
+        <a class="btn btn-go" href="${gmapsWalk(s)}" target="_blank" rel="noopener">🧭 Walk here</a>
+        <button class="btn btn-mark" data-done="${i}">${done.has(i)?'✓ Visited':'Mark visited'}</button>
+      </div>
+      ${s.alt?`<div style="margin-top:10px"><a class="btn btn-mark" style="width:100%;text-decoration:none" href="${gmapsWalk(s.alt)}" target="_blank" rel="noopener">🐟 Walk to ${s.alt.name} instead</a></div>`:''}
+    </div></div>`;
+  stopsEl.appendChild(el);
+});
+
+/* ---- render rail ---- */
+const rail = document.getElementById('rail');
+STOPS.forEach((s,i)=>{
+  const b=document.createElement('button');
+  b.className=(i===0?'active':'');
+  b.dataset.jump=i;
+  b.innerHTML=`<span class="n">${s.num}</span>${s.time}`;
+  rail.appendChild(b);
+});
+
+/* ---- interactions ---- */
+function setActive(i){
+  active=i;
+  document.querySelectorAll('.stop').forEach((el,idx)=>{
+    el.classList.toggle('active',idx===i);
+  });
+  document.querySelectorAll('.rail button').forEach((b,idx)=>{
+    b.classList.toggle('active',idx===i);
+  });
+  updateNowbar();
+}
+function toggle(i){
+  const el=document.getElementById('stop-'+i);
+  el.classList.toggle('open');
+  setActive(i);
+}
+function jump(i){
+  const el=document.getElementById('stop-'+i);
+  if(!el.classList.contains('open')) el.classList.add('open');
+  setActive(i);
+  el.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function markDone(i){
+  const el=document.getElementById('stop-'+i);
+  const btn=el.querySelector('[data-done]');
+  if(done.has(i)){done.delete(i);el.classList.remove('done');btn.textContent='Mark visited';}
+  else{done.add(i);el.classList.add('done');btn.textContent='✓ Visited';}
+  rail.children[i].classList.toggle('done',done.has(i));
+  // advance nowbar to first un-done stop
+  const next = STOPS.findIndex((_,idx)=>!done.has(idx));
+  if(next!==-1){setActive(next); jump(next);} else updateNowbar();
+}
+function updateNowbar(){
+  const next = STOPS.findIndex((_,idx)=>!done.has(idx));
+  const s = next!==-1 ? STOPS[next] : null;
+  document.getElementById('nowName').textContent = s ? s.title.replace(/—.*/,'').trim() : "All stops visited 🎉";
+  const go=document.getElementById('nowGo');
+  if(s){go.href=gmapsWalk(s);go.style.display='';}
+  else{go.style.display='none';}
+}
+
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-toggle]');
+  if(t){toggle(+t.dataset.toggle);return;}
+  const j=e.target.closest('[data-jump]');
+  if(j){jump(+j.dataset.jump);return;}
+  const d=e.target.closest('[data-done]');
+  if(d){markDone(+d.dataset.done);return;}
+});
+document.getElementById('hotelLink').href=gmapsSearch({title:HOTEL.name,where:"Hötorget 13-15 Stockholm",placeId:HOTEL.placeId});
+updateNowbar();
+
+/* ---- phrasebook ---- */
+const PHRASES = [
+  {g:"The essentials", items:[
+    {sv:"Hej",            en:"Hi / Hello",          ph:"hey"},
+    {sv:"Hej då",         en:"Goodbye",             ph:"hey doh"},
+    {sv:"Tack",           en:"Thank you",           ph:"tack"},
+    {sv:"Tack så mycket", en:"Thank you very much", ph:"tack soh MUE-keh"},
+    {sv:"Varsågod",       en:"You're welcome / here you go", ph:"VAR-sha-good"},
+    {sv:"Ja / Nej",       en:"Yes / No",            ph:"yah / nay"},
+    {sv:"Ursäkta",        en:"Excuse me / sorry",   ph:"OOR-shek-ta"},
+    {sv:"Förlåt",         en:"I'm sorry",           ph:"fur-LOHT"},
+  ]},
+  {g:"Being polite", items:[
+    {sv:"Talar du engelska?", en:"Do you speak English?", ph:"TAH-lar doo ENG-el-ska"},
+    {sv:"Jag förstår inte",   en:"I don't understand",    ph:"yah fur-STOHR IN-teh"},
+    {sv:"Kan du hjälpa mig?", en:"Can you help me?",      ph:"kan doo YEL-pa may"},
+    {sv:"Gärna",              en:"Gladly / with pleasure",ph:"YAIR-na"},
+  ]},
+  {g:"Eating & fika", items:[
+    {sv:"Ett bord för två, tack", en:"A table for two, please", ph:"et boord fur tvoh, tack"},
+    {sv:"Notan, tack",       en:"The check, please",   ph:"NOO-tan, tack"},
+    {sv:"Smaklig måltid",    en:"Enjoy your meal",     ph:"SMAHK-lig MOHL-tid"},
+    {sv:"Skål!",             en:"Cheers!",             ph:"skohl"},
+    {sv:"Kanelbulle",        en:"Cinnamon bun",        ph:"ka-NEEL-bul-eh"},
+    {sv:"En kaffe, tack",    en:"A coffee, please",    ph:"en KAF-eh, tack"},
+  ]},
+  {g:"Getting around", items:[
+    {sv:"Var ligger...?",    en:"Where is...?",        ph:"var LIG-er"},
+    {sv:"Till vänster",      en:"To the left",         ph:"til VEN-ster"},
+    {sv:"Till höger",        en:"To the right",        ph:"til HUR-ger"},
+    {sv:"Rakt fram",         en:"Straight ahead",      ph:"rahkt frahm"},
+    {sv:"Jag är vilse",      en:"I'm lost",            ph:"yah air VIL-seh"},
+  ]},
+];
+
+let svVoice = null;
+function pickVoice(){
+  const voices = window.speechSynthesis ? speechSynthesis.getVoices() : [];
+  svVoice = voices.find(v=>v.lang==="sv-SE") || voices.find(v=>v.lang && v.lang.startsWith("sv")) || null;
+  const warn = document.getElementById('noAudio');
+  if(warn) warn.style.display = (window.speechSynthesis && voices.length) ? 'none' : (window.speechSynthesis?'none':'block');
+}
+if(window.speechSynthesis){
+  pickVoice();
+  speechSynthesis.onvoiceschanged = pickVoice;
+}
+
+let playingEl = null;
+function speak(sv, el){
+  if(!window.speechSynthesis){return;}
+  speechSynthesis.cancel();
+  if(playingEl){playingEl.classList.remove('playing');}
+  const u = new SpeechSynthesisUtterance(sv);
+  u.lang = "sv-SE";
+  if(svVoice) u.voice = svVoice;
+  u.rate = 0.9;
+  el.classList.add('playing'); playingEl = el;
+  u.onend = ()=>{ el.classList.remove('playing'); if(playingEl===el) playingEl=null; };
+  u.onerror = u.onend;
+  speechSynthesis.speak(u);
+}
+
+const pEl = document.getElementById('phrases');
+const warn = document.createElement('div');
+warn.className='no-audio'; warn.id='noAudio';
+warn.textContent="Your browser can't play spoken audio here — the phonetic hints below still work great.";
+pEl.appendChild(warn);
+PHRASES.forEach(grp=>{
+  const g=document.createElement('div'); g.className='pgroup';
+  g.innerHTML=`<h3>${grp.g}</h3>`;
+  grp.items.forEach(it=>{
+    const row=document.createElement('div'); row.className='phrase';
+    row.innerHTML=`
+      <div class="txt">
+        <div class="sv">${it.sv}</div>
+        <div class="en">${it.en}</div>
+        <div class="ph">🗣 ${it.ph}</div>
+      </div>
+      <div class="play">▶</div>`;
+    row.addEventListener('click',()=>speak(it.sv,row));
+    g.appendChild(row);
+  });
+  pEl.appendChild(g);
+});
+pickVoice();
+
+/* ---- lightweight map (no API key): OSM static-ish via embed) ---- */
+(function map(){
+  const wrap=document.getElementById('map');
+  // Build an OpenStreetMap iframe centered on Gamla Stan with all points visible.
+  const lats=STOPS.map(s=>s.lat).concat(HOTEL.lat);
+  const lngs=STOPS.map(s=>s.lng).concat(HOTEL.lng);
+  const pad=0.004;
+  const bbox=[Math.min(...lngs)-pad,Math.min(...lats)-pad,Math.max(...lngs)+pad,Math.max(...lats)+pad].join(',');
+  const marker=`${(Math.min(...lats)+Math.max(...lats))/2},${(Math.min(...lngs)+Math.max(...lngs))/2}`;
+  const iframe=document.createElement('iframe');
+  iframe.width="100%";iframe.height="300";iframe.style.border="0";
+  iframe.loading="lazy";
+  iframe.src=`https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${marker}`;
+  wrap.appendChild(iframe);
+})();
+</script>
+</body>
+</html>
